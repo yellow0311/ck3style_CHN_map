@@ -2,8 +2,8 @@ const byId = id => document.getElementById(id);
 const canvas = byId('map');
 const ctx = canvas.getContext('2d');
 const svgIcon = name => '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">' + icons[name] + '</svg>';
-const project = (lon,lat) => [(lon-73)*14,(54-lat)*17];
 const provinceColors = {
+  E92000001:'#989267',S92000003:'#8f88a5',W92000004:'#77a491',N92000002:'#c29364',
   '110000':'#898068', '120000':'#927fa7', '130000':'#d0a552', '140000':'#79b8aa',
   '150000':'#b27499', '210000':'#48918f', '220000':'#d4ad83', '230000':'#7c8b8e',
   '310000':'#a4aaa7', '320000':'#d48a79', '330000':'#c2bc71', '340000':'#618b72',
@@ -14,21 +14,24 @@ const provinceColors = {
   '630000':'#87a66a', '640000':'#ba926d', '650000':'#c17d6c', '710000':'#a77765',
   '810000':'#cdb595', '820000':'#679a92'
 };
-const levelNames = ['省级','地级','县级'];
-const districtLevelNames = {
+const levelNames = atlasCountry.levels.map(uiLabel => ui(uiLabel));
+const districtLevelNames = atlasUS ? {} : atlasUK ? {
+  S92000003:'议会辖区',W92000004:'主要辖区',N92000002:'地方政府区'
+} : {
   '110000':'区级', '120000':'区级', '310000':'区级', '500000':'区县级',
   '810000':'区级', '820000':'分区'
 };
 const sarLabelDirections = {'810000':1,'820000':-1};
 const tooltip = byId('tooltip');
-const number = new Intl.NumberFormat('zh-CN');
-const transportLayers = {railway:railwayLayer,airports:airportLayer,roads:roadLayer};
-const transportScope = {railway:'主要线路与车站',airports:'运输机场与直飞航线',roads:'国家高速与普通国道'};
+const number = new Intl.NumberFormat(atlasLocale);
+const transportLayers = {railway:railwayLayer,airports:airportLayer,roads:roadLayer,...(atlasUS ? {parks:parkLayer} : {})};
+const transportScope = {railway:'主要线路与车站',airports:'运输机场与直飞航线',roads:atlasUS ? '州际公路与主要美国国道' : atlasUK ? '高速公路与 A 级公路' : '国家高速与普通国道',parks:'国家公园及相连保护区'};
 const terrainView = new AtlasTerrain(byId('terrainSurface'),redraw);
 let waterFeatures = [];
 let layers = [[],[],[]];
 let directCounties = [];
 const metricRegionsByProvince = new Map();
+const localRegionsByNation = [new Map(),new Map(),new Map()];
 const localMetricScales = new Map();
 const missingMetricColor = '#b6b4a7';
 let autonomyLayers = autonomyCategories.map(() => []);
@@ -37,6 +40,7 @@ let country = new Path2D();
 let maritime = [];
 let records = new Map();
 let townshipGroups = new Map();
+let localStatistics = {};
 const requestedTheme = new URLSearchParams(location.search).get('view');
 let theme = Object.hasOwn(themes,requestedTheme) ? requestedTheme : 'admin';
 let width, height, dpr, fit;
@@ -51,11 +55,13 @@ let detailMotion = null;
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const levelButtons = [...byId('adminLevels').querySelectorAll('button')];
 const districtPicker = byId('districtPicker');
-const provinceId = region => region.id.slice(0,2)+'0000';
+const provinceId = region => !atlasCN ? region.nation : region.id.slice(0,2)+'0000';
 const isFocused = region => !focusedProvince || provinceId(region) === focusedProvince.id;
 const childWeight = (region,weights) =>
   weights.get(region.p)?.[region.town ? 'town' : region.provinceDirect ? 'directCounty' : 'county'] ?? 0;
 levelButtons.forEach((button,level) => {
+  button.textContent = levelNames[level];
+  button.hidden = atlasUS && level === 1;
   button.onclick = () => {
     if (level === 0 && focusedProvince) {
       reset();
@@ -66,6 +72,59 @@ levelButtons.forEach((button,level) => {
   };
 });
 
+translateStatic(document.body);
+document.title = showOriginal ? 'Shanhe Atlas · '+ui('分层地理图集',{country:countryName(atlasCountry)}) :
+  '山河舆图 · '+atlasCountry.name+'分层地理图集';
+byId('viewport').setAttribute('aria-label',showOriginal ? ui('交互地图',{country:countryName(atlasCountry)}) : atlasCountry.name+'交互地图');
+byId('placeSearch').placeholder = ui(atlasCountry.search);
+if (showOriginal) {
+  document.body.classList.add('original-language');
+  initializeOriginalChrome();
+  document.querySelector('.titleplate').append(document.querySelector('.mobile-legend'));
+  document.querySelector('.brand h1').textContent = 'Shanhe Atlas';
+  document.querySelector('.brand .latin').hidden = true;
+}
+const countryButtons = [];
+for (const code of ['cn',...Object.keys(atlasCountries).filter(code => code !== 'cn').sort()]) {
+  const config = atlasCountries[code];
+  const link = document.createElement('a');
+  link.dataset.country = code;
+  link.textContent = showOriginal ? config.shortName || config.originalName : config.name;
+  link.title = countryName(config);
+  if (code === countryCode) link.setAttribute('aria-current','page');
+  byId('countrySwitch').append(link);
+  countryButtons.push(link);
+}
+const languageControl = byId('atlasLanguage');
+if (atlasCountry.originalLocale) {
+  languageControl.hidden = false;
+  const original = new Option(atlasCountry.languageName || atlasCountry.originalName,'original');
+  original.lang = atlasCountry.originalLocale;
+  const chinese = new Option('中文','zh');
+  chinese.lang = 'zh-CN';
+  languageControl.append(chinese,original);
+  languageControl.value = foreignLanguage;
+  languageControl.onchange = switchLanguage;
+}
+if (atlasCountry.notes) document.querySelector('header .notes').href = atlasNotes(atlasCountry.notes);
+if (atlasUK) {
+  document.body.classList.add('uk-atlas');
+}
+if (atlasUS) {
+  document.body.classList.add('us-atlas');
+  byId('usRegions').hidden = false;
+  for (const {id,label,lon,lat,zoom:targetZoom} of usRegions) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.dataset.region = id;
+    button.textContent = ui(label);
+    button.onclick = () => {
+      reset();
+      fly(targetZoom,...project(lon,lat));
+    };
+    byId('usRegions').append(button);
+  }
+}
 document.querySelectorAll('[data-icon]').forEach(el => el.innerHTML = svgIcon(el.dataset.icon));
 byId('rose').innerHTML = [0,90,180,270].map(angle =>
   '<g transform="rotate('+angle+' 42 42)"><path d="M42 8l-6 34h6z" fill="currentColor"/><path d="M42 8l6 34h-6z" fill="#efe5c8" stroke="currentColor"/></g>'
@@ -74,28 +133,69 @@ for (const [key,[label,english]] of Object.entries(themes)) {
   const button = document.createElement('button');
   button.className = 'theme';
   button.dataset.theme = key;
-  button.innerHTML = svgIcon(key)+'<span><strong>'+label+'</strong><small>'+english+'</small></span>';
+  button.innerHTML = svgIcon(key)+'<span><strong>'+ui(label)+'</strong>'+(showOriginal ? '' : '<small>'+english+'</small>')+'</span>';
   button.onclick = () => setTheme(key);
   byId('themes').append(button);
 }
 function swatch(label,color) {
   return '<div class="legendrow"><i class="swatch" style="background:'+color+'"></i>'+label+'</div>';
 }
+function setLegend(markup) {
+  for (const id of ['legend','mobileLegend']) {
+    const element = byId(id);
+    element.innerHTML = markup;
+    translateStatic(element);
+  }
+}
+function switchLanguage() {
+  const next = languageControl.value;
+  const target = new URL(location.href);
+  target.searchParams.set('lang',next);
+  target.searchParams.set('view',theme);
+  try {
+    localStorage.setItem('shanhe-atlas-language',next);
+    if (fit && records.size) sessionStorage.setItem('shanhe-atlas-view',JSON.stringify({
+      country:countryCode,lang:next,theme,mode,zoom,center:world(width/2,height/2),
+      province:focusedProvince?.id,city:focusedCity?.id,selection:records.get(selected?.id) === selected ? selected?.id : null
+    }));
+  } catch {}
+  location.assign(target);
+}
+function restoreLanguageView() {
+  let bookmark;
+  try {
+    bookmark = JSON.parse(sessionStorage.getItem('shanhe-atlas-view'));
+    if (!bookmark || bookmark.country !== countryCode || bookmark.lang !== foreignLanguage || bookmark.theme !== theme) return;
+    sessionStorage.removeItem('shanhe-atlas-view');
+  } catch { return; }
+  if (!fit) resize();
+  zoom = bookmark.zoom;
+  x = width/2-bookmark.center[0]*fit*zoom;
+  y = height/2-bookmark.center[1]*fit*zoom;
+  setLevel(bookmark.mode,records.get(bookmark.province) || null,records.get(bookmark.city) || null);
+  if (bookmark.selection) select(records.get(bookmark.selection) || null);
+}
 function cityMetricYear(id,index) {
-  return cityStatistics.years?.[id]?.[index] ?? cityStatistics.year;
+  return atlasUS ? 2024 : atlasUK ? [2024,2025][index] : cityStatistics.years?.[id]?.[index] ?? cityStatistics.year;
+}
+const metricValues = region => !atlasCN ? localStatistics[region.id] : region.layer === 0
+  ? indicators[region.id.slice(0,2)] : cityStatistics.regions[region.id];
+function localMetricPeers(province,level = mode,city = focusedCity) {
+  const peers = province ? localRegionsByNation[level].get(province.id) || [] : layers[level];
+  return city && level === 2 ? peers.filter(region => region.p === city.id) : peers;
 }
 function metricScale(key,province) {
   const figures = statistics[key];
-  const cacheKey = key+':'+(province?.id ?? 'national');
+  const cacheKey = [key,province?.id ?? 'national',!atlasCN ? mode : '',!atlasCN ? focusedCity?.id : ''].join(':');
   if (localMetricScales.has(cacheKey)) return localMetricScales.get(cacheKey);
-  const peers = province ? metricRegionsByProvince.get(province.id) ?? [] : layers[1];
-  const covered = peers.filter(region => Number.isFinite(cityStatistics.regions[region.id]?.[figures.index]));
+  const peers = !atlasCN ? localMetricPeers(province) : province ? metricRegionsByProvince.get(province.id) ?? [] : layers[1];
+  const covered = peers.filter(region => Number.isFinite(metricValues(region)?.[figures.index]));
   const years = [...new Set(covered.map(region => cityMetricYear(region.id,figures.index)))].sort();
-  const yearLabel = years.length > 1 ? years.join('、')+' 年' : (years[0] ?? cityStatistics.year)+' 年';
+  const yearLabel = ui('{year} 年',{year:years.length > 1 ? years.join(showOriginal ? ', ' : '、') : years[0] ?? cityMetricYear('',figures.index)});
   const scale = {breaks:figures.cityBreaks,colors:figures.colors,covered:covered.length,total:peers.length,yearLabel};
   localMetricScales.set(cacheKey,scale);
   if (!province) return scale;
-  const values = covered.map(region => cityStatistics.regions[region.id][figures.index]).sort((a,b) => a-b);
+  const values = covered.map(region => metricValues(region)[figures.index]).sort((a,b) => a-b);
   const groups = Math.min(figures.colors.length,new Set(values).size);
   const limits = new Set();
   for (let i=1; i<groups; i++) {
@@ -112,32 +212,38 @@ function metricColor(value,{breaks,colors}) {
   return Number.isFinite(value) ? colors[breaks.filter(limit => value >= limit).length] : missingMetricColor;
 }
 function usesCityMetrics() {
-  return mode > 0 && (!focusedProvince || metricRegionsByProvince.has(focusedProvince.id));
+  return mode > 0 && (!atlasCN ? localMetricPeers(focusedProvince).length > 0 :
+    (!focusedProvince || metricRegionsByProvince.has(focusedProvince.id)));
 }
 function metricLegend(key) {
   const figures = statistics[key];
   const city = usesCityMetrics();
   const scale = city ? metricScale(key,focusedProvince) : figures;
-  const scope = city ? focusedProvince?.n || '全国地级' : '大陆 31 个省级地区';
-  let legend = '<p>'+(city ? scale.yearLabel : '2024 年')+' · '+scope+'<br>'+figures.unit+
-    (key === 'gdp' ? ' · 当年价' : ' · 年末常住')+'</p>';
+  const scope = !atlasCN ? (city ? (focusedCity || focusedProvince)?.n || levelNames[mode] : atlasUS ? '50 州与哥伦比亚特区' : '英国四个组成国') :
+    city ? focusedProvince?.n || '全国地级' : '大陆 31 个省级地区';
+  let legend = '<p>'+(city ? scale.yearLabel : ui('{year} 年',{year:cityMetricYear('',figures.index)}))+' · '+ui(scope)+'<br>'+ui(figures.unit)+
+    ' · '+ui(key === 'gdp' ? '当年价' : !atlasCN ? '年中常住' : '年末常住')+'</p>';
   legend += scale.colors.map((color,i) => {
     const low = scale.breaks[i-1] ?? scale.minimum;
     const high = scale.breaks[i];
     const range = low !== undefined && high !== undefined ? number.format(low)+'–&lt;'+number.format(high) :
       low !== undefined ? '≥ '+number.format(low) : '&lt; '+number.format(high);
     return swatch(range,color);
-  }).join('') + swatch('暂无同口径数据',missingMetricColor);
-  if (city && scale.total) legend += '<p>'+(focusedProvince ? '按省内数值分档 · ' : '')+
-    scale.covered+' / '+scale.total+' 有数据</p>';
-  legend += city ? '<p>点选地区查看数值和来源。</p>' :
+  }).join('') + swatch(ui('暂无同口径数据'),missingMetricColor);
+  if (city && scale.total) legend += '<p>'+(focusedProvince ? ui(!atlasCN ? '按当前地区分档' : '按省内数值分档')+' · ' : '')+
+    ui('{n} / {total} 有数据',{n:scale.covered,total:scale.total})+'</p>';
+  const statSource = atlasUK && key === 'gdp' && mode < 2 ? ukSources.gdpRegional : atlasStatSources[key];
+  legend += !atlasCN ? '<p><a href="'+statSource+'">'+ui(atlasUS ? '美国经济分析局（BEA）' : '英国国家统计局（ONS）')+' ↗</a></p>' :
+    city ? '<p>点选地区查看数值和来源。</p>' :
     '<p><a href="'+statsSource+'" target="_blank" rel="noopener">《2025 甘肃统计提要》↗</a></p>';
   return legend;
 }
 function administrativeLegend() {
   const township = townshipGroups.get(focusedCity?.id);
   const local = districtLevelNames[focusedProvince?.id];
-  const labels = ['省级政区','地级政区',township ? township.label+'边界' : local ? local+'边界' : '县级政区'];
+  if (atlasUS) return '<div class="legendrow"><i class="line"></i>州与联邦特区边界</div><div class="legendrow"><i class="line county"></i>县及同级辖区</div>';
+  const labels = atlasUK ? ['组成国边界','英格兰大区边界',ui('{area}边界',{area:ui(local || levelNames[2])})] :
+    ['省级政区','地级政区',township ? township.label+'边界' : local ? local+'边界' : '县级政区'];
   let legend = labels.map((name,i) => '<div class="legendrow"><i class="line '+['','city','county'][i]+'"></i>'+name+'</div>').join('');
   const direct = mode > 0 ? directCounties.filter(isFocused) : [];
   if (direct.length) {
@@ -150,11 +256,13 @@ function administrativeLegend() {
   return legend;
 }
 function autonomyLegend() {
-  return '<div class="theme-filters" role="group" aria-label="民族自治地方层级">'+
+  return '<div class="theme-filters" role="group" aria-label="'+(atlasUK ? '地方治理类别' : '民族自治地方层级')+'">'+
     autonomyCategories.map(({name,color},i) =>
       '<label><input type="checkbox" data-autonomy="'+i+'" '+(autonomyEnabled[i] ? 'checked' : '')+
       '><i class="swatch" style="background:'+color+'"></i>'+name+'<small>'+autonomyLayers[i].length+'</small></label>'
-    ).join('')+'</div><p><a href="https://www.neac.gov.cn/seac/ztzl/mzzzdf/index.shtml" target="_blank" rel="noopener">国家民委名录 ↗</a></p>';
+    ).join('')+'</div>'+(atlasUK
+      ? '<p>苏格兰、威尔士和北爱尔兰设有各自的分权立法机构。英格兰大区是统计地理区。</p><p><a href="'+ukSources.devolution+'">英国政府 · 权力下放 ↗</a></p>'
+      : '<p><a href="https://www.neac.gov.cn/seac/ztzl/mzzzdf/index.shtml" target="_blank" rel="noopener">国家民委名录 ↗</a></p>');
 }
 function shownAutonomy() {
   return autonomyLayers.flatMap((regions,i) => autonomyEnabled[i] ? regions.filter(isFocused) : []);
@@ -162,7 +270,9 @@ function shownAutonomy() {
 const showsAutonomy = region => autonomyEnabled[region.autonomy] && isFocused(region);
 for (const legend of [byId('legend'),byId('mobileLegend')]) {
   legend.addEventListener('change',universityLayer.filter);
-  for (const layer of Object.values(transportLayers)) legend.addEventListener('change',layer.filter);
+  for (const layer of Object.values(transportLayers)) {
+    if (layer.filter) legend.addEventListener('change',layer.filter);
+  }
   legend.addEventListener('change',event => {
     const input = event.target;
     if (input.dataset.autonomy === undefined) return;
@@ -177,13 +287,24 @@ for (const legend of [byId('legend'),byId('mobileLegend')]) {
 function setTheme(key) {
   const keepRegion = (theme === 'terrain' || key === 'terrain' || key === 'universities') &&
     selected?.layer != null && !selected.universityPlace &&
-    (key !== 'universities' || selected.layer < 2 || selected.provinceDirect);
+    (key !== 'universities' || !atlasCN || selected.layer < 2 || selected.provinceDirect);
   theme = key;
+  for (const link of countryButtons) {
+    const query = new URLSearchParams();
+    const destination = link.dataset.country;
+    if (destination !== 'cn') {
+      query.set('country',destination);
+      if (atlasCountries[destination].originalLocale && (showOriginal || languageParam || savedAtlasLanguage())) query.set('lang',foreignLanguage);
+    }
+    if (key !== 'admin' && (destination === 'cn' || !Object.hasOwn(chinaOnlyThemes,key)) &&
+        (key !== 'parks' || destination === 'us') && (key !== 'autonomy' || destination !== 'us')) query.set('view',key);
+    link.href = query.size ? '?'+query : './';
+  }
   document.body.classList.toggle('terrain-view',key === 'terrain');
   document.body.classList.toggle('university-view',key === 'universities');
   document.body.classList.toggle('railway-view',key === 'railway');
   document.body.classList.toggle('airport-view',key === 'airports');
-  if (key === 'universities' && mode > 1) {
+  if (atlasCN && key === 'universities' && mode > 1) {
     setLevel(focusedProvince && districtLevelNames[focusedProvince.id] ? 0 : 1,focusedProvince);
   }
   hovered = null;
@@ -196,9 +317,9 @@ function setTheme(key) {
     button.setAttribute('aria-pressed',active);
   }
   const [label,english,title] = themes[key];
-  byId('plateName').textContent = title;
+  byId('plateName').textContent = ui(title);
   byId('plateEnglish').textContent = english;
-  byId('status').textContent = key === 'gdp' ? '经济总量 · GDP' : label;
+  byId('status').textContent = ui(key === 'gdp' ? '经济总量 · GDP' : label);
   let legend;
   if (statistics[key]) {
     legend = metricLegend(key);
@@ -218,30 +339,31 @@ function setTheme(key) {
     legend = '<p class="elevation-legend-title">海拔（米）</p>';
     legend += elevationBands.map(({below,color},i) => {
       const lower = elevationBands[i-1]?.below;
-      const label = i === 0 ? '低于 '+number.format(below) : Number.isFinite(below)
-        ? number.format(lower)+'–&lt;'+number.format(below) : number.format(lower)+' 及以上';
+      const label = i === 0 ? ui('低于 {n}',{n:number.format(below)}) : Number.isFinite(below)
+        ? number.format(lower)+'–&lt;'+number.format(below) : ui('{n} 及以上',{n:number.format(lower)});
       return swatch(label,cssColor(color));
     }).join('')+swatch('水域',cssColor(elevationWater));
     legend += Object.values(terrainNameStyles).map(({label,color}) => swatch(label,color)).join('');
-    legend += '<p>放大查看更多自然地名。</p><p><a href="notes.html#terrain-data">地形与水系来源 ↗</a></p>';
-  } else {
+    legend += '<p>放大查看更多自然地名。</p><p><a href="'+atlasNotes(atlasUS ? 'us-terrain' : atlasUK ? 'uk-terrain' : 'terrain-data')+'">地形与水系来源 ↗</a></p>';
+  } else if (key === 'food') {
     legend = swatch('辛香风味示例','#a94536')+swatch('沿海及江南风味示例','#548465')+swatch('其他地方风味示例','#a37c40')+'<p>点选图标查看代表食物。</p>';
   }
-  byId('legend').innerHTML = byId('mobileLegend').innerHTML = legend;
+  setLegend(legend);
   updateLevel();
   if (keepRegion) select(selected);
   redraw();
 }
 function updateHint() {
-  byId('hint').textContent = focusedProvince ? '滚轮缩放 · 点击空白返回全国' : '滚轮缩放 · 拖动平移 · 点选地区';
+  byId('hint').textContent = ui(focusedProvince ? '滚轮缩放 · 点击空白返回全国' : '滚轮缩放 · 拖动平移 · 点选地区');
 }
 function viewWeights(level,province,city) {
-  const hasChildren = province && layers[level].some(region => provinceId(region) === province.id);
+  const hasChildren = province && (!atlasCN ? localMetricPeers(province,level,city).length > 0 :
+    layers[level].some(region => provinceId(region) === province.id));
   const weights = new Map(layers[0].map(region => {
     const active = !province || region === province;
     return [region.id,{
       color: Number(active),
-      cityMetrics: Number(active && level > 0 && metricRegionsByProvince.has(region.id)),
+      cityMetrics: Number(active && level > 0 && (!atlasCN ? localMetricPeers(region,level,city).length > 0 : metricRegionsByProvince.has(region.id))),
       outline: Number(region === province),
       county: Number(active && level === 2 && !city),
       directCounty: !active || level === 0 ? 0 : city ? .52 : 1,
@@ -300,36 +422,37 @@ function setLevel(level,province,city = null) {
 function updateLevel() {
   const districtLevel = districtLevelNames[focusedProvince?.id];
   const township = townshipGroups.get(focusedCity?.id);
-  if (theme === 'admin') byId('legend').innerHTML = byId('mobileLegend').innerHTML = administrativeLegend();
-  if (statistics[theme]) byId('legend').innerHTML = byId('mobileLegend').innerHTML = metricLegend(theme);
+  if (theme === 'admin') setLegend(administrativeLegend());
+  if (statistics[theme]) setLegend(metricLegend(theme));
   const university = theme === 'universities';
-  const provinceHasCities = !focusedProvince || (university
+  const provinceHasCities = !focusedProvince || (university && atlasCN
     ? !districtLevelNames[focusedProvince.id] : layers[1].some(region => region.p === focusedProvince.id));
   const provinceHasCounties = !focusedProvince || layers[2].some(region => isFocused(region));
   for (const [level,button] of levelButtons.entries()) {
     button.setAttribute('aria-pressed',level === mode);
-    button.disabled = (level === 1 && !provinceHasCities) || (level === 2 && (university || (!provinceHasCounties && !township)));
+    button.disabled = (level === 1 && !provinceHasCities) || (level === 2 && ((university && atlasCN) || (!provinceHasCounties && !township)));
   }
-  levelButtons[2].textContent = township?.label || districtLevel || levelNames[2];
+  levelButtons[2].textContent = township?.label || ui(districtLevel) || levelNames[2];
   const levelName = mode === 2 ? levelButtons[2].textContent : levelNames[mode];
-  byId('level').textContent = levelName+'视图';
-  const scope = (focusedCity || focusedProvince)?.n || '全国';
+  byId('level').textContent = ui('{label}视图',{label:levelName});
+  const scope = (focusedCity || focusedProvince)?.n || ui('全国');
   if (university) {
-    byId('plateLevel').textContent = scope+' · '+(mode || focusedProvince ? '地级统计' : '省级汇总');
+    byId('plateLevel').textContent = scope+' · '+ui(mode || focusedProvince ? (atlasUS ? '按县展示' : atlasUK ? '地方辖区统计' : '地级统计') : (atlasUS ? '按州汇总' : atlasUK ? '组成国汇总' : '省级汇总'));
     return;
   }
   if (transportScope[theme]) {
-    byId('plateLevel').textContent = scope+' · '+transportScope[theme];
+    byId('plateLevel').textContent = scope+' · '+ui(transportScope[theme]);
     return;
   }
   const localCoverage = !focusedProvince || layers[mode].some(region =>
     focusedCity ? region.p === focusedCity.id : isFocused(region));
-  const caption = scope+' · '+levelName+(township || levelName === '分区' ? '' : '政区');
+  const caption = scope+' · '+levelName+(!atlasCN || township || levelName === '分区' ? '' : '政区');
   const coverage = township && township.boundaryCount < township.units.length
     ? caption+(township.boundaryCount ? ' · 部分边界' : ' · 名录')
     : focusedProvince && !provinceHasCities && !provinceHasCounties ? scope+' · 仅收录省级边界'
-    : localCoverage ? caption : scope+' · 暂无'+levelName+'边界';
-  const suffix = statistics[theme] ? (usesCityMetrics() ? ' · 地级统计' : ' · 2024 年省级统计') : '';
+    : localCoverage ? caption : scope+' · '+ui('暂无{level}边界',{level:levelName});
+  const suffix = statistics[theme] ? (!atlasCN ? ' · '+ui('{year} 年',{year:cityMetricYear('',statistics[theme].index)}) :
+    usesCityMetrics() ? ' · 地级统计' : ' · 2024 年省级统计') : '';
   const plate = byId('plateLevel');
   if (plate.textContent !== coverage+suffix) plate.textContent = coverage+suffix;
 }
@@ -378,8 +501,11 @@ function visible(region,bounds) {
 }
 function provinceColor(region) {
   const figures = statistics[theme];
-  if (!figures) return provinceColors[region.id];
-  const value = indicators[region.id.slice(0,2)]?.[figures.index];
+  if (!figures) {
+    const stateColors = ['#ab9873','#838da7','#819e8d','#bc916b','#a08180','#929c69','#769596','#b6a482'];
+    return atlasUS ? stateColors[(+region.id.slice(0,2)*7+Math.floor(+region.id.slice(0,2)/8))%stateColors.length] : provinceColors[region.id];
+  }
+  const value = metricValues(region)?.[figures.index];
   return metricColor(value,figures);
 }
 function draw(now) {
@@ -388,12 +514,12 @@ function draw(now) {
   const scale = fit*zoom;
   const elevation = theme === 'terrain';
   const bounds = [-x/scale,-y/scale,(width-x)/scale,(height-y)/scale];
-  const geographic = [73+bounds[0]/14,54-bounds[3]/17,73+bounds[2]/14,54-bounds[1]/17];
+  const geographic = [...unproject(bounds[0],bounds[3]),...unproject(bounds[2],bounds[1])];
   const weights = currentWeights(now);
   const hasSurface = terrainView.render(geographic,!elevation && byId('shade').checked,elevation);
   const surfaceStatus = byId('terrainStatus');
   surfaceStatus.hidden = !elevation || hasSurface || !byId('loading').hidden;
-  if (!surfaceStatus.hidden) surfaceStatus.textContent = terrainView.error ? '高程数据载入失败，请刷新重试。' : '正在载入高程数据…';
+  if (!surfaceStatus.hidden) surfaceStatus.textContent = ui(terrainView.error ? '高程数据载入失败，请刷新重试。' : '正在载入高程数据…');
   byId('inset').hidden = !maritime.length || zoom > 1.48;
   if (!byId('inset').hidden) drawInset();
   ctx.setTransform(dpr,0,0,dpr,0,0);
@@ -430,11 +556,11 @@ function draw(now) {
   if (theme === 'universities') universityLayer.draw();
   transportLayers[theme]?.drawStations?.(scale);
   if (viewTransition) redraw();
-  const kmPerUnit = 111.32*Math.cos((54-(height/2-y)/scale/17)*Math.PI/180)/14;
+  const kmPerUnit = 111.32*Math.cos(unproject(0,(height/2-y)/scale)[1]*Math.PI/180)/atlasCountry.lonScale;
   const nominal = 85*kmPerUnit/scale;
   const exponent = 10**Math.floor(Math.log10(Math.max(1,nominal)));
   const distance = [5,2,1].find(v => v*exponent <= nominal)*exponent;
-  byId('scaleValue').textContent = Number.isFinite(distance) ? '约 '+distance+' km' : '';
+  byId('scaleValue').textContent = Number.isFinite(distance) ? ui('约 {n} km',{n:distance}) : '';
   document.querySelector('.scale div').style.width = (distance*scale/kmPerUnit)+'px';
 }
 function drawBoundaries(bounds,scale,weights) {
@@ -465,12 +591,13 @@ function drawBoundaries(bounds,scale,weights) {
   if (figures) {
     const local = metricScale(theme,focusedProvince);
     const national = focusedProvince ? metricScale(theme,null) : local;
-    for (const region of [...cities,...direct]) {
-      const alpha = weights.get(region.p).cityMetrics;
+    for (const region of !atlasCN && mode === 2 ? counties : [...cities,...direct]) {
+      const nation = provinceId(region);
+      const alpha = weights.get(nation).cityMetrics*(!atlasCN && region.layer === 2 ? countyOpacity(region) : 1);
       if (!alpha) continue;
-      const value = cityStatistics.regions[region.id]?.[figures.index];
+      const value = metricValues(region)?.[figures.index];
       ctx.globalAlpha = alpha*.84;
-      ctx.fillStyle = metricColor(value,region.p === focusedProvince?.id ? local : national);
+      ctx.fillStyle = metricColor(value,nation === focusedProvince?.id ? local : national);
       ctx.fill(mapPath(region),'evenodd');
     }
   }
@@ -543,7 +670,8 @@ function drawWater(bounds,scale) {
 }
 const labelFamily = '"Songti SC","STSong","Noto Serif CJK SC",SimSun,serif';
 function drawTerrainLabels(screen,reserveLabel,paintLabel) {
-  for (const [kind,name,minZoom,...anchors] of terrainNames) {
+  for (const [kind,label,minZoom,...anchors] of terrainNames) {
+    const name = Array.isArray(label) ? nameFor(...label) : label;
     const alpha = minZoom === 1 ? 1 : smooth(minZoom,minZoom+.45,zoom);
     if (!alpha) continue;
     const {size,lift,color} = terrainNameStyles[kind];
@@ -626,6 +754,8 @@ function drawLabels(bounds,weights,now) {
     return;
   }
   const targetLabels = new Map();
+  const metric = statistics[theme];
+  const local = metric && usesCityMetrics();
   const shortName = n => n.replace(/壮族自治区|维吾尔自治区|回族自治区|特别行政区|自治区|省$|市$/g,'');
   function addRegionLabel(region) {
     const i = region.layer;
@@ -638,15 +768,14 @@ function drawLabels(bounds,weights,now) {
         i === 0 && region.autonomy == null ? .42 : 0;
     }
     if (!alpha || (region.b ? !visible(region,bounds) : !region.provinceDirect)) return;
-    const metric = statistics[theme];
-    const value = metric && (usesCityMetrics()
-      ? focusedProvince && zoom >= 3.6 && (i === 1 || region.provinceDirect) && isFocused(region)
-        ? cityStatistics.regions[region.id]?.[metric.index] : undefined
-      : i === 0 && zoom < 1.7 && weight.color ? indicators[region.id.slice(0,2)]?.[metric.index] : undefined);
+    const showsValue = local
+      ? focusedProvince && zoom >= 3.6 && (!atlasCN ? i === mode : i === 1 || region.provinceDirect) && isFocused(region)
+      : i === 0 && zoom < 1.7 && weight.color;
+    const value = metric && showsValue ? metricValues(region)?.[metric.index] : undefined;
     const name = i === 0 ? shortName(region.n) : region.n;
     const year = metric && cityMetricYear(region.id,metric.index);
     const text = name+(Number.isFinite(value) && width > 850 ? ' '+number.format(value)+
-      (year !== cityStatistics.year ? '（'+year+'）' : '') : '');
+      (atlasCN && year !== cityStatistics.year ? '（'+year+'）' : '') : '');
     const size = i === 0 ? (width > 750 ? 16 : 11) : 12;
     const direction = sarLabelDirections[region.id] || 0;
     const offset = direction*sarLabelOffset;
@@ -712,13 +841,13 @@ function resize() {
     terrainView.canvas.width = terrainWidth;
     terrainView.canvas.height = terrainHeight;
   }
-  fit = Math.min((width-28)/890,(height-35)/635);
+  fit = Math.min((width-28)/atlasCountry.viewWidth,(height-35)/atlasCountry.viewHeight);
   if (oldFit) {
     x = width/2+(x-oldWidth/2)*fit/oldFit;
     y = height/2+(y-oldHeight/2)*fit/oldFit;
   } else {
-    x = width/2-420*fit;
-    y = height/2-305*fit;
+    x = width/2-atlasCountry.center[0]*fit;
+    y = height/2-atlasCountry.center[1]*fit;
   }
   redraw();
 }
@@ -726,7 +855,10 @@ function world(sx,sy) {
   return [(sx-x)/(fit*zoom),(sy-y)/(fit*zoom)];
 }
 function showCoordinates(px,py) {
-  byId('coords').textContent = (73+px/14).toFixed(2)+'° E　'+(54-py/17).toFixed(2)+'° N';
+  const [rawLongitude,lat] = unproject(px,py);
+  const lon = atlasUS && rawLongitude < -180 ? rawLongitude+360 : rawLongitude;
+  byId('coords').textContent = Math.abs(lon).toFixed(2)+'° '+(lon < 0 ? 'W' : 'E')+'　'+
+    Math.abs(lat).toFixed(2)+'° '+(lat < 0 ? 'S' : 'N');
 }
 function setZoom(next,sx,sy) {
   const [px,py] = world(sx,sy);
@@ -758,10 +890,12 @@ function reset() {
   setLevel(0,null);
   select(null);
 }
-function administrativeParents(region) {
+function administrativeParents(region, label = parent => parent.n) {
   const parents = [];
-  for (let parent = records.get(region.p); parent && !parents.includes(parent.n); parent = records.get(parent.p)) {
-    parents.unshift(parent.n);
+  const seen = new Set([region.id]);
+  for (let parent = records.get(region.p); parent && !seen.has(parent.id); parent = records.get(parent.p)) {
+    seen.add(parent.id);
+    parents.unshift(label(parent));
   }
   return parents;
 }
@@ -779,7 +913,7 @@ function focusRegion(region) {
   }
 }
 function navigateToRegion(region) {
-  if (theme === 'universities' && region.layer === 2 && !region.provinceDirect) setTheme('admin');
+  if (atlasCN && theme === 'universities' && region.layer === 2 && !region.provinceDirect) setTheme('admin');
   if (theme === 'universities') universityLayer.focus(region);
   else focusRegion(region);
   select(region);
@@ -884,7 +1018,7 @@ function select(region) {
     ? (province.n.endsWith('自治区') ? '自治区' : '省')+'直辖'+
       (region.n.endsWith('市') ? '县级市' : region.n.endsWith('林区') ? '林区' : '县级行政区')
     : null;
-  byId('crumb').textContent = parents.join(' / ') || (region.layer != null ? levelNames[region.layer]+'政区' : themes[theme][0]);
+  byId('crumb').textContent = parents.join(' / ') || (region.layer != null ? levelNames[region.layer]+(atlasCN ? '政区' : '') : ui(themes[theme][0]));
   byId('place').textContent = region.n;
   const sources = byId('detailSources');
   sources.replaceChildren();
@@ -905,7 +1039,19 @@ function select(region) {
       sources.append(link);
     }
   };
-  if (region.town) {
+  if (!atlasCN) {
+    const [gdp,population] = metricValues(region) ?? [];
+    const value = (n,unit) => n == null ? ui('暂无数据') : number.format(n)+' '+ui(unit);
+    byId('crumb').textContent = (parents.length ? parents.join(' / ')+' · ' : '')+(ui(region.type) || levelNames[region.layer]);
+    byId('detailText').textContent = [sourceName(region) !== region.n ? sourceName(region) : null,
+      ui('{year} 年',{year:cityMetricYear(region.id,0)})+' GDP　'+value(gdp,statistics.gdp.unit),
+      ui('{year} 年年中人口',{year:cityMetricYear(region.id,1)})+'　'+value(population,'万人'),
+      region.statCode ? ui('来源统计沿用调整前区界')+' · '+region.statCode : null,
+      (atlasUS ? 'FIPS' : 'ONS')+(showOriginal ? ' code · ' : ' 编码　')+region.id].filter(Boolean).join('\n');
+    const statLabel = atlasUS ? 'BEA' : 'ONS';
+    addSources([[statLabel+' · GDP',atlasUK && region.layer !== 2 ? ukSources.gdpRegional : atlasStatSources.gdp],
+      [statLabel+' · '+ui('年中人口'),atlasStatSources.population],[ui('行政边界'),atlasStatSources.boundary]]);
+  } else if (region.town) {
     const lines = [region.n.endsWith('办事处') ? '办事处' : region.n.endsWith('街道') ? '街道' : '镇'];
     if (!region.b) lines.push('地图暂缺独立边界');
     byId('detailText').textContent = lines.join('\n');
@@ -957,9 +1103,9 @@ function select(region) {
     if (districtPicker.dataset.scope !== pickerScope) {
       const units = township ? township.units : layers[2].filter(item => item.p === pickerScope);
       districtPicker.dataset.scope = pickerScope;
-      const hint = township?.label === '乡镇级' ? '选择镇或办事处' : township ? '选择镇街' : '选择区县';
+      const hint = atlasUK ? ui('选择{area}',{area:ui(districtLevel)}) : township?.label === '乡镇级' ? '选择镇或办事处' : township ? '选择镇街' : '选择区县';
       districtPicker.setAttribute('aria-label',hint);
-      districtPicker.replaceChildren(new Option(township ? hint : '选择区县或分区',''),
+      districtPicker.replaceChildren(new Option(township || atlasUK ? hint : '选择区县或分区',''),
         ...units.map(item => new Option(item.n,item.id)));
     }
     districtPicker.value = region.layer === 2 ? region.id : '';
@@ -1093,29 +1239,37 @@ byId('closer').onclick = () => {
   fly(Math.min(zoom*2,95),selected.x,selected.y);
 };
 new ResizeObserver(resize).observe(canvas);
+updateHint();
 setTheme(theme);
 async function loadJson(url) {
   const response = await fetch(url);
   if (!response.ok) throw new Error(url+' ('+response.status+')');
   return response.json();
 }
-Promise.all([loadJson('data/admin-boundaries.json'),loadJson('data/townships.json').catch(error => {
+Promise.all([loadJson(atlasData('admin-boundaries.json')),!atlasCN ? {} : loadJson('data/townships.json').catch(error => {
   console.error(error);
   return {};
-}),loadJson('data/direct-counties.json').catch(error => {
+}),!atlasCN ? [] : loadJson('data/direct-counties.json').catch(error => {
   console.error(error);
   return [];
-})]).then(([data,townships,supplement]) => {
+}),!atlasCN ? loadJson(atlasData('statistics.json')) : {}]).then(([data,townships,supplement,stats]) => {
+  localStatistics = stats;
   const prefectureParents = new Set(data.city.map(region => region.p));
   const countyIds = new Set(data.county.map(region => region.id));
   data.county.push(...supplement.filter(region => !countyIds.has(region.id)));
-  layers = ['province','city','county'].map((key,layer) => data[key].map(region => ({...region,layer})));
+  layers = ['province','city','county'].map((key,layer) => data[key].map(region => ({...region,zh:region.n,n:nameFor(region.n,sourceName(region)),layer})));
+  if (!atlasCN) for (const [level,areas] of layers.entries()) {
+    for (const area of areas) {
+      if (!localRegionsByNation[level].has(area.nation)) localRegionsByNation[level].set(area.nation,[]);
+      localRegionsByNation[level].get(area.nation).push(area);
+    }
+  }
   autonomyLayers = autonomyCategories.map(({layer,suffix},kind) => {
-    const regions = layers[layer].filter(region => region.b && suffix.test(region.n));
+    const regions = layers[layer].filter(region => region.b && suffix.test(region.zh));
     for (const region of regions) region.autonomy = kind;
     return regions;
   });
-  directCounties = layers[2].filter(region => prefectureParents.has(region.p));
+  directCounties = !atlasCN ? [] : layers[2].filter(region => prefectureParents.has(region.p));
   for (const region of directCounties) region.provinceDirect = true;
   for (const region of [...layers[1],...directCounties]) {
     if (!metricRegionsByProvince.has(region.p)) metricRegionsByProvince.set(region.p,[]);
@@ -1132,20 +1286,21 @@ Promise.all([loadJson('data/admin-boundaries.json'),loadJson('data/townships.jso
   for (const province of layers[0]) country.addPath(path(province));
   records = new Map([...layers.flat(),...townshipsByRegion].map(region => [region.id,region]));
   universityLayer.rebuild();
-  if (theme === 'autonomy') byId('legend').innerHTML = byId('mobileLegend').innerHTML = autonomyLegend();
+  if (theme === 'autonomy') setLegend(autonomyLegend());
   document.dispatchEvent(new Event('atlas-regions-ready'));
   byId('loading').hidden = true;
+  restoreLanguageView();
   updateLevel();
   redraw();
 }).catch(error => {
-  byId('loading').textContent = '行政区数据载入失败，请刷新重试。';
+  byId('loading').textContent = ui('行政区数据载入失败，请刷新重试。');
   console.error(error);
 });
-loadJson('data/maritime.json').then(data => {
+if (atlasCN) loadJson('data/maritime.json').then(data => {
   maritime = data;
   redraw();
 }).catch(console.error);
-loadJson('data/terrain/water.json').then(data => {
+loadJson(atlasData('terrain/water.json')).then(data => {
   waterFeatures = data.map(([kind,rank,b,d]) => ({kind,rank,b,d}));
   redraw();
 }).catch(console.error);

@@ -1,11 +1,16 @@
 const universityLayer = (() => {
-  const categories = new Map([
+  const categories = new Map(atlasUS ? [
+    ['public','公立'],['nonprofit','私立非营利'],['landgrant','赠地院校'],
+    ['hbcu','历史悠久黑人院校'],['tribal','部落院校']
+  ] : atlasUK ? [
+    ['russell','罗素大学集团'],['research','研究学位授予权（英格兰）'],['specialist','专门院校']
+  ] : [
     ['985','985'],['211','211'],['firstClass','双一流'],['coop','中外／港澳合作'],
     ['ministry','教育部直属'],['provincial','省重点（已核验）'],['military','军队院校']
   ]);
   const enabled = new Set();
   const images = new Map();
-  const collator = new Intl.Collator('zh-CN');
+  const collator = new Intl.Collator(atlasLocale);
   const crestZoom = 3.2;
   let data;
   let pending;
@@ -20,17 +25,18 @@ const universityLayer = (() => {
       '<label><input type="checkbox" data-university-filter="'+key+'" '+(enabled.has(key) ? 'checked' : '')+
       (data ? '' : ' disabled')+'>'+label+'</label>'
     ).join('');
-    const count = failed ? '院校数据载入失败' : data ? matched+' 所院校' : '正在载入院校…';
+    const count = failed ? '院校数据载入失败' : data ? ui('{n} 所院校',{n:matched}) : '正在载入院校…';
     return '<div class="theme-filters" role="group" aria-label="院校类别">'+controls+'</div>'+
       '<p data-university-total role="status">'+count+'</p>'+
-      '<p>未选时显示全部，多选时显示符合任一标签的院校。放大后展开校徽，点选标记查看所在城市的院校名单。</p>'+
-      '<p><a href="notes.html#university-data">覆盖范围和来源 ↗</a></p>';
+      '<p>未选时显示全部，多选时显示符合任一标签的院校。放大后展开校徽，点选标记查看所在'+(atlasUS ? '县级辖区' : atlasUK ? '地方辖区' : '城市')+'的院校名单。</p>'+
+      '<p><a href="'+atlasNotes(atlasUS ? 'us-universities' : atlasUK ? 'uk-universities' : 'university-data')+'">覆盖范围和来源 ↗</a></p>';
   }
 
   function load() {
     if (data || pending) return;
     failed = false;
-    pending = loadJson('data/universities.json').then(result => {
+    pending = loadJson(atlasData('universities.json')).then(result => {
+      for (const school of result.schools) school.name = nameFor(school.name,sourceName(school));
       data = result;
       rebuild();
     }).catch(error => {
@@ -39,7 +45,7 @@ const universityLayer = (() => {
     }).finally(() => {
       pending = null;
       if (theme !== 'universities') return;
-      byId('legend').innerHTML = byId('mobileLegend').innerHTML = legend();
+      setLegend(legend());
       if (selected) select(selected);
       redraw();
     });
@@ -84,7 +90,7 @@ const universityLayer = (() => {
     for (const input of document.querySelectorAll('[data-university-filter="'+key+'"]')) {
       input.checked = enabled.has(key);
     }
-    for (const count of document.querySelectorAll('[data-university-total]')) count.textContent = matched+' 所院校';
+    for (const count of document.querySelectorAll('[data-university-total]')) count.textContent = ui('{n} 所院校',{n:matched});
     if (selected) select(selected);
     hovered = null;
     tooltip.hidden = true;
@@ -121,7 +127,7 @@ const universityLayer = (() => {
       ctx.font = '600 '+(radius-2)+'px system-ui,sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(school.name.slice(0,radius > 8 ? 2 : 1),sx,sy+.5);
+      ctx.fillText((school.abbr || school.name).slice(0,radius > 8 ? 2 : 1),sx,sy+.5);
     }
   }
 
@@ -186,7 +192,8 @@ const universityLayer = (() => {
     if (!data) return;
     const expanded = zoom >= crestZoom;
     const countryView = !expanded && mode === 0 && !focusedProvince;
-    const groups = countryView ? [...provinces.values()] : [...cities.values()].filter(({region}) => isFocused(region));
+    const groups = countryView ? [...provinces.values()] : [...cities.values()].filter(({region}) =>
+      isFocused(region) && (atlasCN || !focusedCity || region.p === focusedCity.id));
     const size = group => countryView ? group.schools.size : group.entries.length;
     groups.sort((a,b) => Number(b.region === selected) - Number(a.region === selected) || size(b)-size(a));
     if (expanded) {
@@ -231,6 +238,10 @@ const universityLayer = (() => {
   }
 
   function focus(region) {
+    if (!atlasCN) {
+      focusRegion(region);
+      return;
+    }
     const province = records.get(provinceId(region));
     const level = region === province && districtLevelNames[region.id] ? 0 : 1;
     if (focusedProvince !== province || mode !== level || focusedCity) setLevel(level,province);
@@ -241,8 +252,8 @@ const universityLayer = (() => {
     const crest = document.createElement('span');
     crest.className = 'school-crest';
     const showInitials = () => {
-      crest.textContent = school.name.slice(0,2);
-      crest.title = '校徽暂无';
+      crest.textContent = school.abbr || school.name.slice(0,2);
+      crest.title = ui('校徽暂无');
     };
     if (school.logo) {
       const img = document.createElement('img');
@@ -255,14 +266,17 @@ const universityLayer = (() => {
     const block = document.createElement('div');
     const name = document.createElement('strong');
     name.textContent = school.name;
+    if (sourceName(school)) name.title = sourceName(school);
     block.append(name);
     const campusNames = campus?.filter(([label]) => !['院校名录','院校'].includes(label)) || [];
     if (campusNames.length) {
       const row = document.createElement('small');
-      row.textContent = campusNames.map(([label]) => label).join('、');
+      row.textContent = campusNames.map(([label,,original]) => ui(nameFor(label,original))).join(showOriginal ? ', ' : '、');
+      const originals = campusNames.map(([, ,en]) => en).filter(Boolean);
+      if (originals.length) row.title = originals.join(' / ');
       block.append(row);
     }
-    const tags = school.tags.map(key => categories.get(key)).filter(Boolean);
+    const tags = school.tags.map(key => ui(categories.get(key))).filter(Boolean);
     if (tags.length) {
       const row = document.createElement('small');
       row.textContent = tags.join(' · ');
@@ -270,12 +284,12 @@ const universityLayer = (() => {
     }
     const sources = campus?.filter(([,url]) => url) || [];
     if (school.provincialSource) sources.push(school.provincialSource);
-    for (const [label,url] of sources) {
+    for (const [label,url,original] of sources) {
       const link = document.createElement('a');
       link.href = url;
       link.target = '_blank';
       link.rel = 'noopener';
-      link.textContent = (label === '院校' ? '院校网站' : label+'资料')+' ↗';
+      link.textContent = label === '院校' ? ui('院校网站')+' ↗' : ui('{label}资料 ↗',{label:ui(nameFor(label,original))});
       block.append(link);
     }
     item.append(crest,block);
@@ -287,13 +301,13 @@ const universityLayer = (() => {
     const container = byId('universityDetail');
     container.replaceChildren();
     if (!data) {
-      text.textContent = failed ? '院校数据载入失败' : '正在载入院校…';
+      text.textContent = ui(failed ? '院校数据载入失败' : '正在载入院校…');
       return;
     }
     const city = cities.get(region.id);
-    if (region.layer > 0 || city) {
+    if ((!atlasCN ? region.layer === 2 : region.layer > 0) || city) {
       const entries = city?.entries || [];
-      text.textContent = entries.length ? entries.length+' 所院校' : '当前筛选下暂无已收录院校';
+      text.textContent = entries.length ? ui('{n} 所院校',{n:entries.length}) : ui('当前筛选下暂无已收录院校');
       if (!entries.length) return;
       const list = document.createElement('ul');
       list.className = 'school-list';
@@ -303,17 +317,20 @@ const universityLayer = (() => {
       return;
     }
     const province = provinces.get(region.id);
-    text.textContent = province ? province.schools.size+' 所院校 · '+province.cities.size+' 个地区' : '当前筛选下暂无已收录院校';
-    if (!province) return;
-    const options = [...province.cities].map(id => cities.get(id)).sort((a,b) =>
-      b.entries.length-a.entries.length || collator.compare(a.region.n,b.region.n));
+    const options = atlasUK && region.layer === 1
+      ? [...cities.values()].filter(({region:place}) => place.p === region.id)
+      : [...province?.cities || []].map(id => cities.get(id));
+    const count = province?.schools.size ?? new Set(options.flatMap(group => group.entries.map(({school}) => school.id))).size;
+    text.textContent = count ? ui('{n} 所院校 · {areas} 个地区',{n:count,areas:options.length}) : ui('当前筛选下暂无已收录院校');
+    if (!options.length) return;
+    options.sort((a,b) => b.entries.length-a.entries.length || collator.compare(a.region.n,b.region.n));
     const list = document.createElement('ul');
     list.className = 'school-city-list';
     for (const group of options) {
       const item = document.createElement('li');
       const button = document.createElement('button');
       button.type = 'button';
-      button.textContent = group.region.n+'　'+group.entries.length+' 所';
+      button.textContent = group.region.n+'　'+ui('{n} 所',{n:group.entries.length});
       button.onclick = () => { focus(group.region); select(group.region); };
       item.append(button);
       list.append(item);

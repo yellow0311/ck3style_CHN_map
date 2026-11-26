@@ -1,15 +1,16 @@
 const terrainTileSize = 604;
 const terrainTileCount = 112;
 const terrainLayers = 16;
+const terrainGrid = atlasUS ? {west:-188,north:72,rate:30,cols:3720,rows:1650} :
+  atlasUK ? {west:-9,north:62,rate:120,cols:1440,rows:1560} :
+  {west:60,north:60,rate:30,cols:2700,rows:1800};
 const mapPaper = '#e3dbc4';
-const elevationBands = [
-  {below:200,color:[244,236,213]},
-  {below:500,color:[230,210,171]},
-  {below:1000,color:[208,175,127]},
-  {below:2000,color:[181,137,93]},
-  {below:4000,color:[148,99,67]},
-  {below:Infinity,color:[100,62,48]}
+const elevationColors = [
+  [244,236,213],[230,210,171],[208,175,127],[181,137,93],[148,99,67],[100,62,48]
 ];
+const elevationBands = (atlasUK ? [100,250,500,750,1000,Infinity] : [200,500,1000,2000,4000,Infinity]).map(
+  (below,i) => ({below,color:elevationColors[i]})
+);
 const elevationWater = [155,183,187];
 const cssColor = rgb => `rgb(${rgb.join(',')})`;
 
@@ -41,7 +42,8 @@ vec3 elevation(vec2 p) {
         unpackHeight(texelFetch(uDetail,i+ivec3(1,1,0),0).r));
     }
   }
-  vec2 q = clamp((vec2(p.x,-p.y)-vec2(60,-60))*30.0-0.5,vec2(0),vec2(2698.999,1798.999));
+  vec2 q = clamp((vec2(p.x,-p.y)-vec2(${terrainGrid.west},${-terrainGrid.north}))*${terrainGrid.rate}.0-0.5,
+    vec2(0),vec2(${terrainGrid.cols-2}.999,${terrainGrid.rows-2}.999));
   ivec2 i = ivec2(floor(q));
   return blendGrid(fract(q),unpackHeight(texelFetch(uOverview,i,0).r),
     unpackHeight(texelFetch(uOverview,i+ivec2(1,0),0).r),
@@ -129,7 +131,7 @@ class AtlasTerrain {
   }
 
   async loadGrid(name,cols,rows) {
-    const response = await fetch(`data/terrain/${name}.hgt.gz?v=1`);
+    const response = await fetch(atlasData(`terrain/${name}.hgt.gz?v=1`));
     if (!response.ok) throw new Error(`高程数据 ${name} (${response.status})`);
     let buffer = await response.arrayBuffer();
     if (buffer.byteLength !== cols*rows*2) {
@@ -147,12 +149,13 @@ class AtlasTerrain {
 
   async load() {
     try {
-      this.overview = await this.loadGrid('overview',2700,1800);
+      const {cols,rows} = terrainGrid;
+      this.overview = await this.loadGrid('overview',cols,rows);
       if (this.gl) {
         const gl = this.gl;
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D,this.overviewTexture);
-        gl.texImage2D(gl.TEXTURE_2D,0,gl.R16I,2700,1800,0,gl.RED_INTEGER,gl.SHORT,this.overview);
+        gl.texImage2D(gl.TEXTURE_2D,0,gl.R16I,cols,rows,0,gl.RED_INTEGER,gl.SHORT,this.overview);
       }
     } catch (error) {
       this.error = error;
@@ -202,6 +205,7 @@ class AtlasTerrain {
 
   scheduleTiles(bounds) {
     this.wanted = [];
+    if (!atlasCN) return;
     const [west,south,east,north] = bounds;
     if (east-west > 25 || north-south > 20) return;
     const lon = (west+east)/2, lat = (south+north)/2;
@@ -297,14 +301,14 @@ class AtlasTerrain {
       const lon = west+(x+.5)*(east-west)/cols;
       const tileCol = Math.floor((lon-70)/5);
       return {
-        overview:Math.max(1,Math.min(2698,Math.floor((lon-60)*30))),
+        overview:Math.max(1,Math.min(terrainGrid.cols-2,Math.floor((lon-terrainGrid.west)*terrainGrid.rate))),
         tileCol,
         detail:Math.floor((lon-70-tileCol*5)*120)+2
       };
     });
     for (let y=0,p=0; y<rows; y++) {
       const lat = north-(y+.5)*(north-south)/rows;
-      const row = Math.max(1,Math.min(1798,Math.floor((60-lat)*30)));
+      const row = Math.max(1,Math.min(terrainGrid.rows-2,Math.floor((terrainGrid.north-lat)*terrainGrid.rate)));
       const tileRow = Math.floor((lat-15)/5);
       const detailRow = Math.floor((20+tileRow*5-lat)*120)+2;
       for (let x=0; x<cols; x++,p+=4) {
@@ -312,7 +316,7 @@ class AtlasTerrain {
         const tile = useDetail && tileRow >= 0 && tileRow < 8 && column.tileCol >= 0 && column.tileCol < 14 &&
           this.tileElevation.get(tileRow*14+column.tileCol);
         const samples = tile || this.overview;
-        const stride = tile ? terrainTileSize : 2700;
+        const stride = tile ? terrainTileSize : terrainGrid.cols;
         const i = tile ? detailRow*stride+column.detail : row*stride+column.overview;
         const sample = samples[i];
         if (sample <= -16000 || sample >= 14000) {

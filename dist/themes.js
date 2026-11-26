@@ -11,23 +11,35 @@ const icons = {
   railway:'<rect x="5" y="3" width="14" height="14" rx="3"/><path d="M5 9h14M9 17l-3 4m9-4l3 4M8 20h8M9 13h.01M15 13h.01"/>',
   airports:'<path d="M12 2v19M12 8l-8 5v2l8-2 8 2v-2l-8-5zm0 10l-4 3m4-3l4 3"/>',
   roads:'<path d="M7 3L4 21M17 3l3 18M12 3v4m0 3v4m0 3v4"/>',
+  parks:'<path d="M12 2l-5 6h3l-5 6h5l-5 5h14l-5-5h5l-5-6h3zM12 19v3"/>',
   book:'<path d="M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-3-1-6-1-9 1zm0 0v15"/>',
   focus:'<path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/><circle cx="12" cy="12" r="3"/>'
 };
-const themes = {
-  admin:['行政疆域','ADMINISTRATIVE','中国行政区划图'],
+const chinaOnlyThemes = {
   culture:['人文地理','CULTURE','中国人文地理图'],
-  terrain:['山川地势','TERRAIN','中国海拔地形图'],
   food:['饮食风物','CUISINE','中国饮食风物图'],
-  gdp:['经济总量','GDP','地区生产总值'],
-  population:['常住人口','POPULATION','年末常住人口'],
-  autonomy:['民族自治','AUTONOMY','民族自治地方分布'],
-  universities:['大学分布','UNIVERSITIES','中国高校分布'],
-  railway:['铁路网络','RAILWAY','中国主要铁路网'],
-  airports:['民航机场','AVIATION','中国民航机场与航线'],
-  roads:['公路网络','HIGHWAYS','中国主要公路网']
 };
-const autonomyCategories = [
+const nationalTitle = title => showOriginal ? ui(title,{country:countryName(atlasCountry)}) : atlasCountry.name+title;
+const themes = {
+  admin:['行政疆域','ADMINISTRATIVE',nationalTitle('行政区划图')],
+  ...(atlasCN ? {culture:chinaOnlyThemes.culture} : {}),
+  terrain:['山川地势','TERRAIN',nationalTitle('海拔地形图')],
+  ...(atlasCN ? {food:chinaOnlyThemes.food} : {}),
+  gdp:['经济总量','GDP','地区生产总值'],
+  population:['常住人口','POPULATION',atlasCN ? '年末常住人口' : '年中人口估计'],
+  ...(atlasUS ? {parks:['国家公园','NATIONAL PARKS','美国国家公园']} :
+    {autonomy:atlasUK ? ['权力下放','DEVOLUTION','英国组成国与权力下放'] : ['民族自治','AUTONOMY','民族自治地方分布']}),
+  universities:['大学分布','UNIVERSITIES',nationalTitle('高校分布')],
+  railway:['铁路网络','RAILWAY',nationalTitle('主要铁路网')],
+  airports:['民航机场','AVIATION',nationalTitle('民航机场与航线')],
+  roads:['公路网络','HIGHWAYS',nationalTitle('主要公路网')]
+};
+const autonomyCategories = atlasUK ? [
+  {name:'苏格兰议会',layer:0,suffix:/^苏格兰$/,color:'#547b6c'},
+  {name:'威尔士议会',layer:0,suffix:/^威尔士$/,color:'#ad724e'},
+  {name:'北爱尔兰议会',layer:0,suffix:/^北爱尔兰$/,color:'#72618e'},
+  {name:'英格兰大区',layer:1,suffix:/./,color:'#8d795d'}
+] : [
   {name:'自治区',layer:0,suffix:/自治区$/,color:'#547b6c'},
   {name:'自治州',layer:1,suffix:/自治州$/,color:'#ad724e'},
   {name:'自治县',layer:2,suffix:/自治县$/,color:'#72618e'},
@@ -38,9 +50,65 @@ const terrainNameStyles = {
   river:{label:'江河名称',color:'#155276',size:12,lift:9},
   lake:{label:'湖泊名称',color:'#236782',size:12,lift:9}
 };
-// [类别, 名称, 最小缩放倍数, [经度, 纬度], ...备选标注位置]。
+// [类别, 名称（外国图层为 [中文, 原文]）, 最小缩放倍数, [经度, 纬度], ...备选标注位置]。
 // 水系标注参考 Natural Earth 10m 线面数据，跨区域江河可在不同河段标注。
-const terrainNames = [
+const terrainNames = atlasUS ? [
+  ['land',["落基山脉","Rocky Mountains"],1,[-109,43.2],[-106.2,37.8]], ['land',["内华达山脉","Sierra Nevada"],1,[-119.1,37.9]],
+  ['land',["阿巴拉契亚山脉","Appalachian Mountains"],1,[-81.4,36.9]], ['land',["喀斯喀特山脉","Cascade Range"],1,[-121.2,45.6]],
+  ['land',["科罗拉多高原","Colorado Plateau"],1,[-111,36.6]], ['land',["大平原","Great Plains"],1,[-100,41.2]], ['land',["大盆地","Great Basin"],1,[-116.5,39.5]],
+  ['land',["布鲁克斯山脉","Brooks Range"],1,[-150.7,68]], ['land',["阿拉斯加山脉","Alaska Range"],1,[-150,63.2]], ['land',["迪纳利峰","Denali"],1.65,[-151.0,63.06]],
+  ['land',["冒纳罗亚火山","Mauna Loa"],2.7,[-155.61,19.48]], ['land',["冒纳凯阿山","Mauna Kea"],2.7,[-155.47,19.82]],
+  ['land',["大烟山","Great Smoky Mountains"],1.65,[-83.45,35.61]], ['land',["奥扎克高原","Ozark Plateau"],1.65,[-92.9,36.4]],
+  ['river',["密西西比河","Mississippi River"],1,[-90.6,34.1],[-90.3,40.1]], ['river',["密苏里河","Missouri River"],1,[-99.5,45.1]],
+  ['river',["科罗拉多河","Colorado River"],1,[-112.7,36.2]], ['river',["哥伦比亚河","Columbia River"],1,[-119.2,45.9]],
+  ['river',["格兰德河","Rio Grande"],1,[-103.5,29.4]], ['river',["育空河","Yukon River"],1,[-157,65.2]],
+  ['river',["俄亥俄河","Ohio River"],1.65,[-87.9,37.8]], ['river',["阿肯色河","Arkansas River"],1.65,[-96.9,36.9]],
+  ['river',["哈德孙河","Hudson River"],1.65,[-73.94,41.4]], ['river',["波托马克河","Potomac River"],2.7,[-77.3,39.05]],
+  ['lake',["苏必利尔湖","Lake Superior"],1,[-87.7,47.5]], ['lake',["密歇根湖","Lake Michigan"],1,[-87.1,43.4]],
+  ['lake',["休伦湖","Lake Huron"],1,[-82.9,44.8]], ['lake',["伊利湖","Lake Erie"],1.65,[-81.5,42.1]], ['lake',["安大略湖","Lake Ontario"],1.65,[-77.9,43.65]],
+  ['lake',["大盐湖","Great Salt Lake"],1,[-112.55,41.15]], ['lake',["太浩湖","Lake Tahoe"],2.7,[-120.02,39.09]],
+  ['lake',["奥基乔比湖","Lake Okeechobee"],2.7,[-80.81,26.94]], ['lake',["伊利亚姆纳湖","Iliamna Lake"],2.7,[-154.1,59.55]]
+] : atlasUK ? [
+  ['land',["苏格兰高地","Scottish Highlands"],1,[-4.95,57.70]],
+  ['land',["凯恩戈姆山脉","Cairngorms"],1,[-3.64,57.09]],
+  ['land',["本尼维斯山","Ben Nevis"],1,[-5.003,56.797]],
+  ['land',["南部高地","Southern Uplands"],1,[-3.56,55.37]],
+  ['land',["奔宁山脉","Pennines"],1,[-2.24,54.37],[-1.98,53.42]],
+  ['land',["湖区","Lake District"],1,[-3.16,54.47]],
+  ['land',["斯诺登山","Yr Wyddfa (Snowdon)"],1,[-4.076,53.068]],
+  ['land',["坎布里安山脉","Cambrian Mountains"],1,[-3.79,52.36]],
+  ['land',["莫恩山脉","Mourne Mountains"],1,[-5.95,54.15]],
+  ['river',["泰晤士河","River Thames"],1,[-0.71,51.53],[0.20,51.46]],
+  ['river',["塞文河","River Severn"],1,[-2.21,51.87],[-2.22,52.26]],
+  ['river',["特伦特河","River Trent"],1,[-0.78,53.14]],
+  ['river',["泰河","River Tay"],1,[-3.47,56.45]],
+  ['river',["克莱德河","River Clyde"],1,[-4.31,55.87]],
+  ['lake',["内伊湖","Lough Neagh"],1,[-6.40,54.62]],
+  ['lake',["尼斯湖","Loch Ness"],1,[-4.44,57.28]],
+  ['lake',["洛蒙德湖","Loch Lomond"],1,[-4.60,56.10]],
+  ['land',["格兰扁山脉","Grampian Mountains"],1.65,[-4.19,56.87]],
+  ['land',["丘厄特山丘","Cheviot Hills"],1.65,[-2.10,55.48]],
+  ['land',["布雷肯比肯斯","Bannau Brycheiniog (Brecon Beacons)"],1.65,[-3.44,51.88]],
+  ['land',["达特穆尔","Dartmoor"],1.65,[-3.96,50.56]],
+  ['land',["安特里姆高原","Antrim Plateau"],1.65,[-6.16,55.03]],
+  ['land',["斯佩林山脉","Sperrin Mountains"],1.65,[-7.11,54.78]],
+  ['river',["泰恩河","River Tyne"],1.65,[-1.66,54.97]],
+  ['river',["默西河","River Mersey"],1.65,[-2.77,53.32]],
+  ['river',["斯佩河","River Spey"],1.65,[-3.20,57.45]],
+  ['river',["特威德河","River Tweed"],1.65,[-2.45,55.61]],
+  ['river',["大乌斯河","Great Ouse"],1.65,[0.19,52.38]],
+  ['river',["班恩河","River Bann"],1.65,[-6.51,54.85]],
+  ['river',["怀河","River Wye"],2.7,[-2.98,52.01]],
+  ['river',["埃文河（布里斯托尔）","River Avon (Bristol)"],2.7,[-2.49,51.40]],
+  ['river',["迪河（威尔士）","River Dee (Wales)"],2.7,[-3.11,52.97]],
+  ['lake',["厄恩湖","Lough Erne"],1.65,[-7.77,54.47]],
+  ['lake',["温德米尔湖","Windermere"],1.65,[-2.94,54.36]],
+  ['lake',["奥湖","Loch Awe"],2.7,[-5.25,56.27]],
+  ['lake',["马里湖","Loch Maree"],2.7,[-5.45,57.68]],
+  ['lake',["泰湖","Loch Tay"],2.7,[-4.06,56.51]],
+  ['lake',["乌尔斯沃特湖","Ullswater"],2.7,[-2.91,54.58]],
+  ['lake',["巴拉湖","Llyn Tegid (Bala Lake)"],2.7,[-3.64,52.89]]
+] : [
   ['land','天山山脉',1,[85.1,42.82]],
   ['land','昆仑山脉',1,[87.42,36.35],[80.20,36.17]],
   ['land','喜马拉雅山脉',1,[86.60,28.62],[92.52,28.10]],
@@ -150,7 +218,7 @@ const indicators = {
   63:[3951,593],64:[5503,729],65:[20534,2623]
 };
 const statistics = {
-  gdp:{index:0,unit:'亿元',breaks:[10000,30000,60000,100000],cityBreaks:[1000,3000,6000,12000],colors:['#efe0ac','#deba83','#c48a5d','#a35d43','#763d35']},
-  population:{index:1,unit:'万人',breaks:[1000,3000,6000,10000],cityBreaks:[100,300,600,1000],colors:['#e1e2bc','#bbc7a5','#91ac8d','#638d7c','#386559']}
+  gdp:{index:0,unit:atlasUS ? '亿美元' : atlasUK ? '亿英镑' : '亿元',breaks:atlasUS ? [1500,3500,7000,12000] : atlasUK ? [350,750,1500,4000] : [10000,30000,60000,100000],cityBreaks:atlasUS ? [10,40,125,600] : atlasUK ? [20,50,100,400] : [1000,3000,6000,12000],colors:['#efe0ac','#deba83','#c48a5d','#a35d43','#763d35']},
+  population:{index:1,unit:'万人',breaks:atlasUS ? [200,500,1000,2000] : atlasUK ? [200,400,550,1000] : [1000,3000,6000,10000],cityBreaks:atlasUS ? [3,10,30,100] : atlasUK ? [10,20,35,80] : [100,300,600,1000],colors:['#e1e2bc','#bbc7a5','#91ac8d','#638d7c','#386559']}
 };
 const statsSource = 'https://tjj.gansu.gov.cn/tjj/c117468/202505/174143566/files/4db368f09fac4efb95b5d73aa316e1bf.pdf';

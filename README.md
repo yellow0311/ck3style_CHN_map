@@ -1,12 +1,17 @@
 # 山河舆图 · Shanhe Atlas
 
-受《十字军之王 III》（CK3）地图模式启发的中国交互式地理图集。地图用行政层级组织浏览，设有行政疆域、人文地理、山川地势、饮食风物、GDP、常住人口、民族自治、大学分布、铁路网络、民航机场和公路网络专题。
+受《十字军之王 III》（CK3）地图模式启发的中英美交互地理图集。顶部可切换中国、英国和美国，使用各国的行政区划、地形、GDP、人口、高校和交通数据。中国另有人文地理、饮食风物和民族自治图层，英国设有权力下放专题，美国设有国家公园专题。
 
 github静态托管网页：https://yellow0311.github.io/ck3style_CHN_map/
 
 [更新日志](CHANGELOG.md)
 
 ## 如何浏览
+
+- **切换国家**。顶部选择「中国」「英国」或「美国」，共有专题会切换到对应国家的数据。从国家专属专题切换到其他国家时，可回到行政地图。
+- **切换语言**。在外国图集顶部选择「中文」或该国原语言。目前英国和美国提供中文和英文，选择会在两国之间沿用。地图标签、图例与详情同步切换，搜索始终支持中文名、原名和行政区代码。
+- **浏览英国**。四个组成国均可点选。英格兰按大区进一步下钻到地方辖区，其余三个组成国直接下钻到辖区。行政区搜索支持中文名、原名和 ONS 编码。英国 GDP 为 2024 年现价数据，人口为 2025 年年中估计。
+- **浏览美国**。点选州或联邦特区可进入县级视图，支持按名称和 FIPS 编码搜索。地图标题下可在本土 48 州、阿拉斯加和夏威夷间定位。可从国家公园图例下拉定位公园。美国统计使用 2024 年现价 GDP 和年中人口，铁路显示 Amtrak 城际与长途客运。
 
 - **切换行政层级**：点选底部的省级、地级或县级。滚轮以指针为中心缩放，拖动可平移，触屏支持双指缩放。
 - **搜索行政区**：在顶部输入名称、常用简称或行政区代码。候选显示上级行政区以区分同名地点。点选候选后地图定位并调整缩放，也可用方向键和回车选择。
@@ -16,6 +21,7 @@ github静态托管网页：https://yellow0311.github.io/ck3style_CHN_map/
 - **直辖镇街的地级市**：点选东莞、中山、儋州或嘉峪关后，显示各市直接管辖的镇、街道或办事处。详情卡也可按名称选择。
 - **返回全国**：点选地图上的空白处、底部的「省级」或右下角返回按钮，也可在地图获得焦点后按 `Home`。逐级点选和返回全国都保留当前视角。
 - **查阅专题**：切换图层并按图例阅读。点选行政区域或专题样本点可打开详情。
+- **查看中国人文地理和饮食风物**。人文地理用渐变表示历史文化区域，饮食风物按城市标注代表食物。点选标记可查看说明。
 - **查看山川地势**。图例以米标注六档海拔，水域使用蓝色。全国视图标注主要山脉、江河和湖泊，放大后可看更多自然地名。「地名标注」可一并开关自然与行政地名。切换图层时保留缩放、平移位置和当前行政区选择。
 - **筛选民族自治地方**：打开「民族自治」，在图例分别开关自治区、自治州、自治县和自治旗。各层用独立颜色标记。
 - **浏览高校**。缩小地图时查看省级汇总与城市预览，放大后在地级行政区代表点附近展开各校校徽。空间不足时，剩余院校用 `+N` 标记。点选校徽或汇总标记可查看所在地区的院校名单。可多选 985、211、双一流、中外／港澳合作、教育部直属等标签。
@@ -34,7 +40,7 @@ github静态托管网页：https://yellow0311.github.io/ck3style_CHN_map/
 python3 -m http.server 8765 --bind 127.0.0.1 --directory dist
 ```
 
-访问 [测试页](http://127.0.0.1:8765/)，也可直接打开[山川地势](http://127.0.0.1:8765/?view=terrain)、[民族自治](http://127.0.0.1:8765/?view=autonomy)、[大学分布](http://127.0.0.1:8765/?view=universities)或[铁路网络](http://127.0.0.1:8765/?view=railway)。项目使用原生 HTML、CSS、JavaScript 和 Canvas，支持 WebGL 2 加速平面底图。高程、边界、铁路和高校名录随站点提供，校徽按需联网读取。
+可直接打开[中国测试页](http://127.0.0.1:8765/)、[英国测试页](http://127.0.0.1:8765/?country=uk)、[美国测试页](http://127.0.0.1:8765/?country=us)、[中国人文地理](http://127.0.0.1:8765/?view=culture)或[中国饮食风物](http://127.0.0.1:8765/?view=food)。项目使用原生 HTML、CSS、JavaScript 和 Canvas，支持 WebGL 2 加速平面底图。高程、边界、铁路和高校名录随站点提供，校徽按需联网读取。
 
 ## 部署到 GitHub Pages
 
@@ -104,10 +110,15 @@ git push -u origin main
 - **行政区划**的 DataV 快照收录 34 个省级、333 个地级及 2,870 个县级记录，台湾部分收录省级轮廓。新疆新星市、白杨市的边界及草湖市的政府驻地点位由 OpenStreetMap（ODbL）补充，草湖市全域边界待补。另收录东莞、中山、儋州和嘉峪关的 76 个镇街及儋州的 3 个办事处，名称和隶属关系按各市政府名录核对，边界来自 OpenStreetMap。 [阿里云 DataV 地理小工具](https://datav.aliyun.com/portal/school/atlas/area_selector) · [© OpenStreetMap contributors](https://www.openstreetmap.org/copyright)
 - **地形**使用 Mapzen Terrain Tiles 的数字高程。「山川地势」按海拔分级着色，并绘制 Natural Earth 矢量河流和湖泊。其他图层可选用实时地势晕渲。所有底图均按中国行政区边界裁切。全国视野使用 2 角分网格，放大后在东经 70–140°、北纬 15–55° 载入 30 角秒网格。 [Mapzen 数据与署名](https://registry.opendata.aws/terrain-tiles/) · [Natural Earth 水系](https://www.naturalearthdata.com/downloads/10m-physical-vectors/)
 - **GDP 与人口**图层使用 2024 年大陆 31 个省级地区数据。地级数据优先采用 2024 年现价 GDP 和年末常住人口，缺项可采用相邻年份的同口径数据。详情逐项标出年份、数值和来源。重庆统计按 2024 年区划，綦江区含万盛。香港分区显示 2024 年陆上非住院人口。澳门分区显示 2021 年陆地面积，七个堂区另列 2021 年人口普查的 13–35 岁人口。缺项显示「暂无数据」。 [省级数据来源](https://tjj.gansu.gov.cn/tjj/c117468/202505/174143566/files/4db368f09fac4efb95b5d73aa316e1bf.pdf)
-- **文化与饮食**采用编辑选取的代表性区域和样本点。文化渐变反映区域边界的模糊性，饮食点展示地方风味实例。
 - **铁路网络**选取 63 条代表性线路，使用 OpenStreetMap 的轨道几何和 853 个站点记录。归类依据线路的主要用途。车站圆点表示客站，方点表示货运节点。 [铁路数据口径](dist/notes.html#railway-data) · [© OpenStreetMap contributors（ODbL）](https://www.openstreetmap.org/copyright)
 
-仓库自带运行所需的静态数据。需要刷新边界时，可运行 `python3 scripts/prepare_boundaries.py`。脚本使用 Python 3、`curl` 和网络连接，更新 `dist/data/admin-boundaries.json` 与 `dist/data/maritime.json`。
+英国数据存放于 `dist/data/uk/`，来源和覆盖范围见[英国图志手记](dist/notes.html#uk-data)。`scripts/prepare_uk_*.py` 负责整理英国各主题的数据。重建英国铁路、公路或高校数据后，运行 `python3 scripts/localize_uk_names.py` 应用中文名称。
+
+美国数据存放于 `dist/data/us/`，由 `scripts/prepare_us_admin.py`、`scripts/prepare_us_themes.py` 和 `scripts/prepare_us_terrain.py` 生成。重建美国边界、高校、铁路和机场数据后，运行 `python3 scripts/localize_us_names.py` 应用双语名称。数据年份与覆盖说明见[美国图志手记](dist/notes.html#us-data)。
+
+新增外国图集时，在 `dist/country.js` 登记原语言地区代码 `originalLocale`、原文国名 `originalName` 和语言菜单名称 `languageName`。菜单会自动出现。图层名称字段保持中文和原文并存。对象数据可用原文字段 `original`，已有的 `en` 仍兼容。界面词表在 `dist/locale.js` 中按语言添加，已有词表可复用。参数 `lang=zh` 和 `lang=original` 可用于分享指定语言的视图。
+
+仓库自带运行所需的静态数据。需要刷新中国边界时，可运行 `python3 scripts/prepare_boundaries.py`。脚本使用 Python 3、`curl` 和网络连接，更新 `dist/data/admin-boundaries.json` 与 `dist/data/maritime.json`。
 
 要更新镇街边界，安装 Python 包 `osmium` 和 `shapely`，下载 Geofabrik 的广东、海南、甘肃 OpenStreetMap 提取文件，并分别命名为 `guangdong.osm.pbf`、`hainan.osm.pbf`、`gansu.osm.pbf`。运行 `python3 scripts/prepare_townships.py <提取文件目录>` 生成 `dist/data/townships.json`。 [Geofabrik 中国分区下载](https://download.geofabrik.de/asia/china.html)
 

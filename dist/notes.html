@@ -1,7 +1,7 @@
 <!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>图志手记 · 山河舆图</title><style>
 :root{background:#ece4cc;color:#2b362d;font:17px/1.8 "Songti SC","STSong",Georgia,serif}body{margin:0}header{background:#25312c;color:#ece4cc;border-bottom:2px solid #aa8e58;padding:12px max(24px,calc((100% - 780px)/2))}header a{color:inherit;text-decoration:none;white-space:nowrap}main{max-width:780px;margin:0 auto;padding:42px 24px 60px}h1{font-size:clamp(36px,7vw,62px);line-height:1.2;margin:0;letter-spacing:.12em}h2{font-size:25px;margin-top:34px;border-bottom:1px solid #b1a17a;padding-bottom:7px}h3{font-size:18px;margin-bottom:4px}p{margin-top:4px}a{color:#833e2c;text-underline-offset:4px}li+li{margin-top:10px}.intro{font-size:21px;margin-top:14px;color:#5d5948}table{width:100%;border-collapse:collapse}th,td{text-align:left;border-bottom:1px solid #cabea3;padding:8px;vertical-align:top}th{white-space:nowrap}small{color:#6e634d}
-</style></head><body><header><a href="./">← 返回山河舆图</a></header><main>
-<h1>图志手记</h1><p class="intro">从《十字军之王 III》的地图设计到中国分层地理图集</p>
+</style></head><body><header><a id="atlasBack" href="./">← 返回山河舆图</a></header><main>
+<h1>图志手记</h1><p class="intro">从《十字军之王 III》的地图设计到中英美国别地理图集</p>
 <h2>CK3 如何让一张地图承载不同尺度</h2>
 <table><thead><tr><th>视角</th><th>CK3 的地图表现</th><th>山河舆图的对应设计</th></tr></thead><tbody>
 <tr><th>远景</th><td>纸图突出领地轮廓和大地名，适于总览。</td><td>用浅色晕渲、较大的省名和行政填色建立全国格局。</td></tr>
@@ -13,15 +13,13 @@
 <h3>逐级查看行政区划，在同一位置切换专题</h3>
 <p>点选四川后，省内地级边界逐渐显现，其他省份同步淡化。再点选成都可查看其县级边界，四川省内其他地级行政区轻度淡化。点底部的「地级」可返回省内地级视图，点地图空白处可回到全国。切换层级时保留当前视角。在山川地势中也可逐级点选，并对照海拔图例辨认盆地与外围山地。</p>
 <p>直辖市、香港及澳门直接进入区县或分区视图，可点选地图边界内的区域，或用详情卡里的下拉菜单查看。切换时底色先变淡，随后显出边界和地名。</p>
-<h3>用渐变表示文化核心，用点表示饮食样本</h3>
-<p>巴蜀、荆楚、江南等文化范围存在交叠且随历史变化，用核心周围的渐变表达影响范围的模糊性。饮食风物以城市为样本点，点选可看代表食物。同一城市也可以逐步扩充多个饮食传统。</p>
+<p>中国图集保留人文地理和饮食风物。历史文化区域用渐变呈现，城市食物标记可点选查看说明。</p>
 <h3>统计口径在缩放中保持可辨</h3>
 <p>GDP 与人口在全国总览按省级数值着色，切到全国地级视图使用统一的地级色阶。进入某个省份后，图例按省内已有数据分为最多五档，颜色越深表示数值越高。灰色表示缺少该项数据。点选地级行政区可查看当地的 GDP、常住人口和数据来源。</p>
 <h2>数据与覆盖</h2>
 <ul>
 <li>阿里云 DataV 边界数据快照收录 34 个省级、333 个地级、2,870 个县级记录，包含港澳区级资料。台湾部分收录省级轮廓。新疆新星市、白杨市的县级边界及草湖市的政府驻地点位由 OpenStreetMap（ODbL）补充，草湖市全域边界待补。东莞、中山、儋州、嘉峪关下钻后可浏览四市的 76 个镇街及儋州的 3 个办事处，名录来自市政府，边界来自 OpenStreetMap。<a href="https://datav.aliyun.com/portal/school/atlas/area_selector">DataV 地理小工具</a> · <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a></li>
 <li id="terrain-data">「山川地势」使用 Mapzen 数字高程，按海拔由低到高分六档着色。蓝色标记水域，水系轮廓来自 Natural Earth。主要山脉、高原、盆地、江河和湖泊采用选录标注，按地图缩放级别逐步显示。跨区域江河可在不同河段标注。全国网格间隔为 2 角分，东经 70–140°、北纬 15–55° 范围内放大后载入 30 角秒网格。全球 SRTM、GMTED2010 数据由 USGS 提供，ETOPO1 由 NOAA 提供。<a href="https://registry.opendata.aws/terrain-tiles/">Mapzen 高程数据</a> · <a href="https://github.com/tilezen/joerd/blob/master/docs/attribution.md">完整来源及署名</a> · <a href="https://www.naturalearthdata.com/downloads/10m-physical-vectors/">Natural Earth 水系</a></li>
-<li>文化和饮食采用编辑选取的区域与样本点，适合探索与对照。不同地区内部的风味和文化传统各有差异。</li>
 <li id="city-statistics">省级设色采用 2024 年大陆 31 个省级地区统计。地级数据优先采用 2024 年统计公报和年鉴，缺项可采用相邻年份的同口径数据。GDP 为当年价、单位亿元，人口为年末常住人口、单位万人。图例标出当前视图实际使用的年份，详情逐项标出年份和来源。重庆采用 2024 年区划，綦江区含万盛。香港采用 2024 年陆上非住院人口，澳门采用 2021 年陆地面积及 13–35 岁普查人口。缺项显示「暂无数据」。<a href="https://tjj.gansu.gov.cn/tjj/c117468/202505/174143566/files/4db368f09fac4efb95b5d73aa316e1bf.pdf">省级数据来源</a></li>
 </ul>
 <h2 id="university-data">大学分布的数据口径</h2>
@@ -39,4 +37,33 @@
 <p>航点根据 2026 年 11 月 26 日收集的公开客运航点表整理，排除了标有经停、停航和未来开通的记录。覆盖不全，部分航点仅季节性运营。图内连接弧线表示机场之间的运输联系，实际航路及航班以承运方公布为准。境外机场在详情中列出。 <a href="https://en.wikipedia.org/wiki/Beijing_Capital_International_Airport#Airlines_and_destinations">客运航点表样例（维基百科，CC BY-SA）</a></p>
 <h2 id="road-data">公路网络的数据口径</h2>
 <p>图层提取 2026 年 11 月 24 日 OpenStreetMap 中国快照中带有 G 编号的已绘制道路。按国家高速和普通国道设色，国家高速的联络线和区域环线在放大后显示。道路因资料缺段可能断开，线条经制图简化。 <a href="https://download.geofabrik.de/asia/china/">Geofabrik 中国快照</a> · <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors（ODbL）</a> · <a href="https://app.www.gov.cn/govdata/gov/202207/13/487228/article.html">国家公路网规划</a></p>
-</main></body></html>
+<h2 id="uk-data">英国图集的数据口径</h2>
+<p>可在地图顶部切换中文和原文。行政区可用中文、原文或 ONS 编码搜索。常见地名优先沿用通行译名，部分小站、校区和地方名称按原名音译和意译。公路编号及 IATA 代码采用原编号。 <a href="https://www.geonames.org/export/">GeoNames 地名库</a> · <a href="https://zh.wikipedia.org/wiki/英国铁路车站列表">英国铁路车站译名参考</a></p>
+<p>行政图收录 4 个组成国、9 个英格兰大区和 361 个地方政府辖区。英格兰可按大区查看辖区。苏格兰、威尔士和北爱尔兰直接进入议会辖区、主要辖区和地方政府区。行政边界按 2025 年 12 月 ONS BSC 数据生成，组成国和大区由辖区边界合并。含英国测绘局数据，© Crown copyright and database right 2025。 <a href="https://www.data.gov.uk/dataset/eae2345e-bd82-4c7a-9cae-61c4eb1db7e0/local-authority-districts-december-2025-boundaries-uk-bsc">ONS 边界</a> · <a href="https://www.data.gov.uk/dataset/c1d7290e-c00c-411d-a499-32e222b7bb59/local-authority-district-to-region-april-2025-lookup-in-en-v21">英格兰大区对应表</a></p>
+<p>权力下放专题标明三个组成国的分权立法机构及英格兰统计大区。GDP 使用 ONS 的 2024 年当年市场价格数据，以亿英镑为单位。人口使用 2025 年 6 月 30 日常住人口估计，以万人为单位。巴恩斯利与谢菲尔德的来源统计沿用边界调整前的区界，详情中标明原编码。 <a href="https://www.gov.uk/guidance/devolution-of-powers-to-scotland-wales-and-northern-ireland">英国政府 · 权力下放</a> · <a href="https://www.ons.gov.uk/economy/grossdomesticproductgdp/datasets/regionalgrossdomesticproductallnutslevelregions/1998to2024">ONS 组成国与大区 GDP</a> · <a href="https://www.ons.gov.uk/economy/grossdomesticproductgdp/datasets/regionalgrossdomesticproductlocalauthorities/1998to2024">ONS 地方 GDP</a> · <a href="https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/bulletins/annualmidyearpopulationestimates/mid2025">ONS 年中人口</a> · <a href="https://www.legislation.gov.uk/uksi/2024/1328/made">区界调整</a></p>
+<h3 id="uk-terrain">地形与地名</h3>
+<p>英国使用 30 角秒 Mapzen 高程格网，并以 100、250、500、750 和 1,000 米划分六档。水系采用 Natural Earth 矢量数据，标出包括本尼维斯山、奔宁山脉、泰晤士河和内伊湖在内的代表性自然地名。 <a href="https://registry.opendata.aws/terrain-tiles/">Mapzen 高程</a> · <a href="https://www.naturalearthdata.com/downloads/10m-physical-vectors/">Natural Earth</a></p>
+<h3 id="uk-universities">高校与校区</h3>
+<p>院校名单合并英格兰 OfS 本科及以上学位授予机构和公开英国大学名录，收录 195 所。校区按 OpenStreetMap 和学校公开资料归入所在地的地方辖区，同校同区记一次。缺少独立校区点位的院校按登记地或名录所在地归档，可核对的 Wikimedia Commons 校徽按需加载。罗素大学集团覆盖全部 24 个成员，研究学位授予权筛选采用英格兰 OfS 登记，专门院校筛选选录艺术、音乐及其他专业学校。 <a href="https://www.officeforstudents.org.uk/for-providers/registering-with-the-ofs/guide-to-the-ofs-register/">OfS 名录</a> · <a href="https://en.wikipedia.org/wiki/List_of_universities_in_the_United_Kingdom">大学名录与校徽条目</a> · <a href="https://www.russellgroup.ac.uk/sites/default/files/2025-03/Russell%20Group_Future%20Ready_The%20Path%20to%20Growth.pdf">罗素大学集团成员</a> · <a href="https://postcodes.io/">英国邮编地理资料</a></p>
+<h3 id="uk-transport">铁路与公路</h3>
+<p>铁路和公路由 2026 年 11 月 24 日 Geofabrik 的英国及爱尔兰地区 OpenStreetMap 快照整理。铁路分为高速、常规客货和已标记货运线路，收录 725 组线路与 2,822 个邻近站点记录。沿线站点按轨道距离匹配，作为地理参照。公路收录 69 个高速公路编号（含 A(M)）和 1,363 个主要 A 级公路编号。线条经制图简化，线路覆盖随 OSM 标注而变。 <a href="https://download.geofabrik.de/europe/great-britain.html">大不列颠快照</a> · <a href="https://download.geofabrik.de/europe/ireland-and-northern-ireland.html">爱尔兰及北爱尔兰快照</a> · <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors（ODbL）</a></p>
+<h3 id="uk-aviation">民航机场</h3>
+<p>英国地图收录 53 座定期客运机场，按 CAA 2025 年航站楼旅客人次分档。41 座机场有 CAA 2025 年定期客运航线记录，线条连接图内机场，图外目的地列在详情。统计反映该年度实际有定期客运记录的航点，最新执飞信息以航空公司为准。 <a href="https://www.caa.co.uk/data-and-analysis/uk-aviation-market/airports/uk-airport-data/uk-airport-data-2025/annual-2025/">英国 CAA，表 09、12.1 和 12.2</a> · <a href="https://airportmiles.com/data">机场坐标（CC0）</a></p>
+<h2 id="us-data">美国图集的数据口径</h2>
+<p>行政图覆盖 50 州、哥伦比亚特区和 3,137 个县及同级辖区，含路易斯安那州堂区和阿拉斯加的县级同等单元。州与县均可切换中英文，搜索支持两种名称和 FIPS 编码。三个地图区域可分别定位，海外领地未纳入。边界采用依据美国人口普查局资料整理的简化矢量。 <a href="https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html">人口普查局边界</a> · <a href="https://services9.arcgis.com/GDVaV4SDJDDBT8gi/arcgis/rest/services/US_Boundaries_Semi_General_V2/FeatureServer">简化边界服务</a></p>
+<p>州和县级专题使用 BEA 的 2024 年现价 GDP 与年中人口，单位分别为亿美元和万人。本图所列辖区中 3,091 个有独立统计值。BEA 在夏威夷、弗吉尼亚州等处将部分县和独立市合并统计，地图保留各辖区边界，缺少独立数值的地区用灰色标示。 <a href="https://www.bea.gov/data/gdp/gdp-county-metro-and-other-areas">BEA 地方 GDP</a> · <a href="https://www.bea.gov/data/income-saving/personal-income-county-metro-and-other-areas">BEA 年中人口</a></p>
+<p>美国行政区、高校、机场和车站的常见名称采用通行译名。部分小地名和机构名称参考 GeoNames 或按原名音译，FIPS、IATA 和道路编号保留原编号。 <a href="https://www.geonames.org/export/">GeoNames 地名库</a></p>
+<h3 id="us-terrain">地形与地名</h3>
+<p>使用 Mapzen 数字高程格网和 Natural Earth 矢量水系，补充落基山脉、密西西比河、五大湖、迪纳利峰和夏威夷火山等自然地理标注。 <a href="https://registry.opendata.aws/terrain-tiles/">Mapzen</a> · <a href="https://www.naturalearthdata.com/downloads/10m-physical-vectors/">Natural Earth</a></p>
+<h3 id="us-parks">国家公园</h3>
+<p>图层收录 50 州内的 61 座国家公园，可点选边界或标记查看公园及其官方页面，也可用图例下拉定位。根据国家公园管理局边界生成，部分公园保留相连保护区。 <a href="https://www.nps.gov/aboutus/national-park-system.htm">国家公园管理局</a> · <a href="https://services1.arcgis.com/fBc8EJBxQRMcHlei/ArcGIS/rest/services/NPS_Land_Resources_Division_Boundary_and_Tract_Data_Service/FeatureServer/2">NPS 边界服务</a></p>
+<h3 id="us-universities">高校</h3>
+<p>IPEDS 2024 名录中，2,745 所符合四年制及学位授予口径的有效院校可定位到县级辖区。按公立、私立非营利、赠地院校、历史悠久黑人院校和部落院校筛选。地图使用院校简称标记，校名和校区所在地可切换中文与原文。 <a href="https://nces.ed.gov/ipeds/datacenter/">美国教育统计中心 IPEDS</a></p>
+<h3 id="us-transport">铁路和公路</h3>
+<p>铁路专题展示美国本土的 Amtrak 城际及长途客运，共 49 条线路记录和 538 个关联站点，按线路几何匹配邻近站点。公路收录美国运输统计局国家公路系统中 238 个州际公路和 289 个美国国道编号，线条经过制图简化。 <a href="https://www.arcgis.com/home/item.html?id=8f534a0c7468483f9837ef93e2e5ebb1">BTS Amtrak 线路</a> · <a href="https://services.arcgis.com/xOi1kZaI0eWDREZv/arcgis/rest/services/NTAD_National_Highway_System/FeatureServer">BTS 国家公路系统</a></p>
+<h3 id="us-aviation">民航机场</h3>
+<p>收录 634 座定期客运机场，按机场名录的规模字段区分。597 座机场有航点记录。航线依据 AirportMiles 整理的美国 BTS T‑100 实际旅客运输记录，统计窗口为 2025 年 8 月至 2026 年 7 月。点选机场可查看图内航线和图外目的地。 <a href="https://airportmiles.com/sources">AirportMiles 数据口径</a> · <a href="https://www.bts.gov/topics/airlines-and-airports/airline-information-download">BTS 航空数据</a></p>
+</main><script>
+const country = new URLSearchParams(location.search).get("country");
+if (country === "uk" || country === "us") document.getElementById("atlasBack").href = "./?country="+country+"&lang=zh";
+</script></body></html>

@@ -51,10 +51,10 @@ def overlaps(box, bounds):
     return box[0] <= bounds[2] and box[2] >= bounds[0] and box[1] <= bounds[3] and box[3] >= bounds[1]
 
 
-def areas(name, cache):
+def areas(name, cache, bounds=(WEST, SOUTH, EAST, NORTH)):
     areas = []
     for shape in shape_reader(name, cache).shapes():
-        if not overlaps(shape.bbox, (WEST, SOUTH, EAST, NORTH)):
+        if not overlaps(shape.bbox, bounds):
             continue
         geo = shape.__geo_interface__
         polygons = geo["coordinates"] if geo["type"] == "MultiPolygon" else [geo["coordinates"]]
@@ -88,8 +88,11 @@ def save_grid(output, height, west, north, samples, land, lakes):
     output.write_bytes(gzip.compress(delta.astype("<i2", copy=False).tobytes(), compresslevel=5, mtime=0))
 
 
-def water_vectors(cache):
-    bounds = (WEST, SOUTH, EAST, NORTH)
+def china_project(lon, lat):
+    return (lon - 73) * 14, (54 - lat) * 17
+
+
+def water_vectors(cache, bounds=(WEST, SOUTH, EAST, NORTH), project=china_project):
     vectors = []
     for kind, name in (("lake", "lakes"), ("river", "rivers_lake_centerlines")):
         for record in shape_reader(name, cache).iterShapeRecords():
@@ -101,10 +104,10 @@ def water_vectors(cache):
             ends = list(shape.parts[1:]) + [len(shape.points)]
             paths = []
             for start, end in zip(shape.parts, ends):
-                points = [f"{(lon - 73) * 14:.3f},{(54 - lat) * 17:.3f}" for lon, lat in shape.points[start:end]]
+                points = ["{:.3f},{:.3f}".format(*project(lon, lat)) for lon, lat in shape.points[start:end]]
                 paths.append("M" + " ".join(points) + ("Z" if kind == "lake" else ""))
             a, b, c, d = shape.bbox
-            vectors.append((kind, rank, [(a - 73) * 14, (54 - d) * 17, (c - 73) * 14, (54 - b) * 17], "".join(paths)))
+            vectors.append((kind, rank, [*project(a, d), *project(c, b)], "".join(paths)))
     return vectors
 
 
@@ -126,7 +129,8 @@ def load_height(bounds, samples, zoom, cache):
 
     def fetch(tile):
         x, y = tile
-        file = download(f"{MAPZEN}/{zoom}/{x}/{y}.tif", cache, f"{zoom}-{x}-{y}.tif")
+        geo_x = x % tile_count
+        file = download(f"{MAPZEN}/{zoom}/{geo_x}/{y}.tif", cache, f"{zoom}-{geo_x}-{y}.tif")
         with Image.open(file) as source:
             pixels = np.asarray(source)
             if pixels.shape != (512, 512):
