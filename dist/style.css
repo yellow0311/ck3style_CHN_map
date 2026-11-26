@@ -43,7 +43,7 @@ aside{scrollbar-width:thin;scrollbar-color:#756c52 #27342e}
 .theme-filters small{margin-left:auto;color:#c5bb9f;font-variant-numeric:tabular-nums}
 .theme-filters .swatch{width:14px;height:9px}
 #universityDetail{margin-bottom:9px}
-.university-view #detail{width:min(335px,calc(100% - 35px));max-height:calc(100% - 75px);overflow:auto}
+.university-view #detail,.airport-view #detail{width:min(335px,calc(100% - 35px));max-height:calc(100% - 75px);overflow:auto}
 .school-list,.school-city-list{display:grid;gap:0;list-style:none;padding:0;margin:0;max-height:min(33vh,310px);overflow:auto;scrollbar-width:thin;overscroll-behavior:contain}
 .school-list li{display:grid;grid-template-columns:30px 1fr;gap:8px;align-items:start;padding:6px 2px;border-top:1px solid #b1a17959}
 .school-crest{width:28px;height:28px;display:grid;place-items:center;overflow:hidden;border-radius:50%;background:#e0d5b6;color:#655437;font-size:10px}

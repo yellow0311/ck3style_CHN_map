@@ -22,6 +22,8 @@ const districtLevelNames = {
 const sarLabelDirections = {'810000':1,'820000':-1};
 const tooltip = byId('tooltip');
 const number = new Intl.NumberFormat('zh-CN');
+const transportLayers = {railway:railwayLayer,airports:airportLayer,roads:roadLayer};
+const transportScope = {railway:'主要线路与车站',airports:'运输机场与直飞航线',roads:'国家高速与普通国道'};
 const terrainView = new AtlasTerrain(byId('terrainSurface'),redraw);
 let waterFeatures = [];
 let layers = [[],[],[]];
@@ -160,7 +162,7 @@ function shownAutonomy() {
 const showsAutonomy = region => autonomyEnabled[region.autonomy] && isFocused(region);
 for (const legend of [byId('legend'),byId('mobileLegend')]) {
   legend.addEventListener('change',universityLayer.filter);
-  legend.addEventListener('change',railwayLayer.filter);
+  for (const layer of Object.values(transportLayers)) legend.addEventListener('change',layer.filter);
   legend.addEventListener('change',event => {
     const input = event.target;
     if (input.dataset.autonomy === undefined) return;
@@ -180,6 +182,7 @@ function setTheme(key) {
   document.body.classList.toggle('terrain-view',key === 'terrain');
   document.body.classList.toggle('university-view',key === 'universities');
   document.body.classList.toggle('railway-view',key === 'railway');
+  document.body.classList.toggle('airport-view',key === 'airports');
   if (key === 'universities' && mode > 1) {
     setLevel(focusedProvince && districtLevelNames[focusedProvince.id] ? 0 : 1,focusedProvince);
   }
@@ -206,9 +209,9 @@ function setTheme(key) {
   } else if (key === 'universities') {
     legend = universityLayer.legend();
     universityLayer.load();
-  } else if (key === 'railway') {
-    legend = railwayLayer.legend();
-    railwayLayer.load();
+  } else if (transportLayers[key]) {
+    legend = transportLayers[key].legend();
+    transportLayers[key].load();
   } else if (key === 'culture') {
     legend = swatch('历史文化区域示意','#aa976f')+'<p>以区域核心为线索，边缘呈渐变。</p>';
   } else if (key === 'terrain') {
@@ -315,8 +318,8 @@ function updateLevel() {
     byId('plateLevel').textContent = scope+' · '+(mode || focusedProvince ? '地级统计' : '省级汇总');
     return;
   }
-  if (theme === 'railway') {
-    byId('plateLevel').textContent = scope+' · 主要线路与车站';
+  if (transportScope[theme]) {
+    byId('plateLevel').textContent = scope+' · '+transportScope[theme];
     return;
   }
   const localCoverage = !focusedProvince || layers[mode].some(region =>
@@ -420,12 +423,12 @@ function draw(now) {
   ctx.fillStyle = mapPaper;
   ctx.fill(outside,'evenodd');
   drawBoundaries(bounds,scale,weights);
-  if (theme === 'railway') railwayLayer.drawTrack(bounds,scale);
+  transportLayers[theme]?.drawTrack(bounds,scale);
   ctx.setTransform(dpr,0,0,dpr,0,0);
   poiHitboxes = [];
   drawLabels(bounds,viewTransition?.to || weights,now);
   if (theme === 'universities') universityLayer.draw();
-  if (theme === 'railway') railwayLayer.drawStations(scale);
+  transportLayers[theme]?.drawStations?.(scale);
   if (viewTransition) redraw();
   const kmPerUnit = 111.32*Math.cos((54-(height/2-y)/scale/17)*Math.PI/180)/14;
   const nominal = 85*kmPerUnit/scale;
@@ -628,7 +631,7 @@ function drawLabels(bounds,weights,now) {
     const i = region.layer;
     const weight = weights.get(i === 2 ? region.p : region.id);
     let alpha = i === 2 ? childWeight(region,weights) : weight?.label;
-    if (theme === 'railway') alpha *= .44;
+    if (transportLayers[theme]) alpha *= .44;
     if (theme === 'autonomy') {
       const emphasized = showsAutonomy(region);
       alpha = emphasized ? (i === 2 && !focusedProvince && zoom < 2.6 && region !== selected ? 0 : 1) :
@@ -792,10 +795,8 @@ function navigateToRegion(region) {
   fly(clamp(boxZoom,1,60),(left+right)/2,(top+bottom)/2);
 }
 function pick(sx,sy) {
-  if (theme === 'railway') {
-    const railway = railwayLayer.pick(sx,sy);
-    if (railway) return railway;
-  }
+  const transport = transportLayers[theme]?.pick(sx,sy);
+  if (transport) return transport;
   if (theme === 'universities') {
     const schoolRegion = universityLayer.pick(sx,sy)?.region;
     if (schoolRegion) return schoolRegion;
@@ -856,6 +857,12 @@ function select(region) {
     ) : null;
   }
   if (!region) {
+    redraw();
+    return;
+  }
+  if (region.overlay === theme) {
+    districtPicker.hidden = true;
+    transportLayers[theme].show(region);
     redraw();
     return;
   }

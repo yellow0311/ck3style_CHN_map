@@ -1,6 +1,6 @@
 # 山河舆图 · Shanhe Atlas
 
-受《十字军之王 III》（CK3）地图模式启发的中国交互式地理图集。地图用行政层级组织浏览，设有行政疆域、人文地理、山川地势、饮食风物、GDP、常住人口、民族自治、大学分布和铁路网络专题。
+受《十字军之王 III》（CK3）地图模式启发的中国交互式地理图集。地图用行政层级组织浏览，设有行政疆域、人文地理、山川地势、饮食风物、GDP、常住人口、民族自治、大学分布、铁路网络、民航机场和公路网络专题。
 
 github静态托管网页：https://yellow0311.github.io/ck3style_CHN_map/
 
@@ -21,6 +21,8 @@ github静态托管网页：https://yellow0311.github.io/ck3style_CHN_map/
 - **浏览高校**。缩小地图时查看省级汇总与城市预览，放大后在地级行政区代表点附近展开各校校徽。空间不足时，剩余院校用 `+N` 标记。点选校徽或汇总标记可查看所在地区的院校名单。可多选 985、211、双一流、中外／港澳合作、教育部直属等标签。
 - **比较省内经济与人口**。进入省份后，图例按该省收录的地级数据分档。颜色越深，数值越高。灰色代表缺少该项数据。
 - **查看铁路网络**。可筛选高铁与客运专线、普速客货干线、重点货运线及车站。点选线路可浏览沿途收录的主要车站，再点站名可定位。
+- **查看民航机场**。机场按飞行区等级着色。点选机场可查看已收录的直飞目的地，图内航线用弧线连接，境外航点在详情中列出。资料为公开航点表快照，实时航班以承运方公布为准。
+- **查看公路网络**。可分别筛选国家高速与普通国道，放大可见区域高速，点选道路可看编号。图层采用 OpenStreetMap 中有 G 编号的已绘制路段。
 
 [图志手记](dist/notes.html) 记录了 CK3 地图调研、设计取舍和数据覆盖范围。网站发布后可从首页打开在线版。
 
@@ -69,6 +71,7 @@ git push -u origin main
 │   ├── search.js                # 行政区搜索与定位
 │   ├── universities.js          # 高校分布与筛选
 │   ├── railways.js              # 铁路线和站点交互
+│   ├── transport.js             # 机场、航线与公路交互
 │   ├── style.css
 │   ├── notes.html               # 调研、设计和数据说明
 │   └── data/
@@ -79,6 +82,8 @@ git push -u origin main
 │       ├── townships.json       # 四个地级市的直辖镇街名录及边界
 │       ├── universities.json    # 院校、标签及按地级行政区归并的校区
 │       ├── railways.json         # 铁路矢量线路及主要站点
+│       ├── airports.json         # 机场点位、飞行区等级与客运航点快照
+│       ├── roads.json            # 国家高速与普通国道线路
 │       ├── maritime.json        # 海域示意
 │       └── terrain/             # 数值高程网格和矢量水系
 └── scripts/
@@ -89,7 +94,9 @@ git push -u origin main
     ├── university_additions.json # 补充校区、地方建设批次和地区名录
     ├── prepare_railways.py       # 生成铁路线和车站数据
     ├── railway_routes.json      # 选取的主线与站点
-    └── prepare_terrain.py       # 生成高程网格和水系数据
+    ├── prepare_terrain.py       # 生成高程网格和水系数据
+    ├── prepare_airports.py      # 整理机场、等级和航点快照
+    └── prepare_roads.py         # 从 OSM 提取带 G 编号的路段
 ```
 
 ## 数据来源和口径
@@ -109,6 +116,10 @@ git push -u origin main
 要重建地形数据，安装 Python 包 `numpy`、`Pillow` 和 `pyshp` 后运行 `python3 scripts/prepare_terrain.py`。脚本缓存源数据并写入 `dist/data/terrain/`，网站运行时直接读取打包后的高程数据。
 
 要重建铁路数据，安装 Python 包 `shapely`，运行 `python3 scripts/prepare_railways.py <OSM 关系缓存目录>`。脚本将缺少的关系下载到缓存目录，并生成 `dist/data/railways.json`。
+
+要重建公路数据，安装 Python 包 `osmium` 和 `shapely`，从 Geofabrik 下载中国 OSM PBF，再运行 `python3 scripts/prepare_roads.py <中国 PBF 路径> --date <快照日期>`。 [Geofabrik 中国快照](https://download.geofabrik.de/asia/china/)
+
+要重建机场与航线数据，安装 Python 包 `beautifulsoup4` 和 `lxml`。缓存目录包含 AirportMiles 的 `airports.json`、机场等级表 `airport-grades.html` 和 `airport-pages/`。后者保存各机场客运航点页面，文件名采用 `IATA.html`，并在 `urls.json` 记录 IATA 代码与来源网址的对应关系。运行 `python3 scripts/prepare_airports.py <缓存目录> --date <收集日期>`。 [机场数据与口径](dist/notes.html#airport-data)
 
 ## 重建院校名录
 

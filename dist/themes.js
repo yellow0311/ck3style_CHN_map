@@ -9,6 +9,8 @@ const icons = {
   autonomy:'<path d="M12 2l9 5v10l-9 5-9-5V7zM12 6l5 3v6l-5 3-5-3V9z"/><circle cx="12" cy="12" r="1"/>',
   universities:'<path d="M2 9l10-5 10 5-10 5zM6 11v6c4 3 8 3 12 0v-6m3-1v6"/>',
   railway:'<rect x="5" y="3" width="14" height="14" rx="3"/><path d="M5 9h14M9 17l-3 4m9-4l3 4M8 20h8M9 13h.01M15 13h.01"/>',
+  airports:'<path d="M12 2v19M12 8l-8 5v2l8-2 8 2v-2l-8-5zm0 10l-4 3m4-3l4 3"/>',
+  roads:'<path d="M7 3L4 21M17 3l3 18M12 3v4m0 3v4m0 3v4"/>',
   book:'<path d="M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-3-1-6-1-9 1zm0 0v15"/>',
   focus:'<path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/><circle cx="12" cy="12" r="3"/>'
 };
@@ -21,7 +23,9 @@ const themes = {
   population:['常住人口','POPULATION','年末常住人口'],
   autonomy:['民族自治','AUTONOMY','民族自治地方分布'],
   universities:['大学分布','UNIVERSITIES','中国高校分布'],
-  railway:['铁路网络','RAILWAY','中国主要铁路网']
+  railway:['铁路网络','RAILWAY','中国主要铁路网'],
+  airports:['民航机场','AVIATION','中国民航机场与航线'],
+  roads:['公路网络','HIGHWAYS','中国主要公路网']
 };
 const autonomyCategories = [
   {name:'自治区',layer:0,suffix:/自治区$/,color:'#547b6c'},
