@@ -6,6 +6,7 @@ const universityLayer = (() => {
   const enabled = new Set();
   const images = new Map();
   const collator = new Intl.Collator('zh-CN');
+  const crestZoom = 3.2;
   let data;
   let pending;
   let failed = false;
@@ -22,7 +23,7 @@ const universityLayer = (() => {
     const count = failed ? '院校数据载入失败' : data ? matched+' 所院校' : '正在载入院校…';
     return '<div class="theme-filters" role="group" aria-label="院校类别">'+controls+'</div>'+
       '<p data-university-total role="status">'+count+'</p>'+
-      '<p>未选时显示全部，多选时显示符合任一标签的院校。点选城市查看校徽和院校名单。</p>'+
+      '<p>未选时显示全部，多选时显示符合任一标签的院校。放大后展开校徽，点选标记查看所在城市的院校名单。</p>'+
       '<p><a href="notes.html#university-data">覆盖范围和来源 ↗</a></p>';
   }
 
@@ -102,13 +103,96 @@ const universityLayer = (() => {
     return image.naturalWidth ? image : null;
   }
 
+  function drawCrest(school,sx,sy,radius,highlighted = false) {
+    const image = logoFor(school);
+    ctx.fillStyle = '#fff8e7';
+    ctx.beginPath();
+    ctx.arc(sx,sy,radius,0,Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = highlighted ? '#946328' : '#597766';
+    ctx.lineWidth = highlighted ? 2 : 1;
+    ctx.stroke();
+    if (image) {
+      const factor = (radius*2-2)/Math.max(image.naturalWidth,image.naturalHeight);
+      const w = image.naturalWidth*factor, h = image.naturalHeight*factor;
+      ctx.drawImage(image,sx-w/2,sy-h/2,w,h);
+    } else {
+      ctx.fillStyle = '#604b31';
+      ctx.font = '600 '+(radius-2)+'px system-ui,sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(school.name.slice(0,radius > 8 ? 2 : 1),sx,sy+.5);
+    }
+  }
+
+  function drawExpanded(groups) {
+    const step = width < 600 ? 24 : 28;
+    const diameter = step-4;
+    const used = new Set();
+    const layouts = [];
+    const scale = fit*zoom;
+    // Reserve the nearest slot for each visible city before allocating its remaining crests.
+    for (const {region,entries} of groups) {
+      const sx = x+region.x*scale, sy = y+region.y*scale-15;
+      if (sx < 0 || sy < 0 || sx > width || sy > height) continue;
+      const column = Math.round((sx-x)/step), row = Math.round((sy-y)/step);
+      const span = Math.ceil((Math.sqrt(entries.length)-1)/2)+1;
+      const candidates = [];
+      for (let dy=-span; dy<=span; dy++) {
+        for (let dx=-span; dx<=span; dx++) {
+          const cx = x+(column+dx)*step, cy = y+(row+dy)*step;
+          if (cx < step/2 || cx > width-step/2 || cy < step/2 || cy > height-step/2) continue;
+          const key = (column+dx)+','+(row+dy);
+          candidates.push({key,sx:cx,sy:cy,distance:(cx-sx)**2+(cy-sy)**2});
+        }
+      }
+      candidates.sort((a,b) => a.distance-b.distance);
+      const nearest = candidates.find(slot => !used.has(slot.key));
+      if (!nearest) continue;
+      used.add(nearest.key);
+      layouts.push({region,entries,candidates,slots:[nearest]});
+    }
+    for (const {region,entries,candidates,slots} of layouts) {
+      for (const slot of candidates) {
+        if (slots.length === entries.length) break;
+        if (used.has(slot.key)) continue;
+        used.add(slot.key);
+        slots.push(slot);
+      }
+      const shown = slots.length === entries.length ? entries.length : slots.length-1;
+      for (const [i,{sx,sy}] of slots.entries()) {
+        const school = i < shown ? entries[i].school : null;
+        markers.push({region,school,sx,sy,width:diameter,height:diameter});
+        if (school) {
+          drawCrest(school,sx,sy,diameter/2,region === selected);
+        } else {
+          const remainder = '+'+(entries.length-shown);
+          ctx.beginPath();
+          ctx.arc(sx,sy,diameter/2,0,Math.PI*2);
+          ctx.fillStyle = '#34594c';
+          ctx.fill();
+          ctx.fillStyle = '#fff4d4';
+          ctx.font = '600 9px system-ui,sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(remainder,sx,sy+.5);
+        }
+      }
+    }
+  }
+
   function draw() {
     markers = [];
     if (!data) return;
-    const countryView = mode === 0 && !focusedProvince;
+    const expanded = zoom >= crestZoom;
+    const countryView = !expanded && mode === 0 && !focusedProvince;
     const groups = countryView ? [...provinces.values()] : [...cities.values()].filter(({region}) => isFocused(region));
     const size = group => countryView ? group.schools.size : group.entries.length;
     groups.sort((a,b) => Number(b.region === selected) - Number(a.region === selected) || size(b)-size(a));
+    if (expanded) {
+      drawExpanded(groups);
+      return;
+    }
     for (const group of groups) {
       const {region} = group;
       const [sx,sy] = [x+region.x*fit*zoom,y+region.y*fit*zoom-15];
@@ -117,12 +201,11 @@ const universityLayer = (() => {
       const previews = !countryView && zoom >= 1.6
         ? entries.filter(({school}) => school.logo).slice(0,2) : [];
       const count = String(size(group));
-      ctx.font = '600 11px system-ui,sans-serif';
-      const pill = Math.max(24,ctx.measureText(count).width+12);
+      const pill = 24;
       const markerWidth = previews.length*19+pill;
       if (markers.some(other => Math.abs(other.sx-sx) < (other.width+markerWidth)/2+4 &&
           Math.abs(other.sy-sy) < 21)) continue;
-      markers.push({region,sx,sy,width:markerWidth});
+      markers.push({region,sx,sy,width:markerWidth,height:18});
       const left = sx-markerWidth/2;
       ctx.fillStyle = region === selected || region === hovered ? '#946328' : '#34594c';
       ctx.strokeStyle = '#f4e9cb';
@@ -132,27 +215,10 @@ const universityLayer = (() => {
       ctx.fill();
       ctx.stroke();
       for (const [i,{school}] of previews.entries()) {
-        const image = logoFor(school);
-        const logoX = left+5+i*19;
-        ctx.fillStyle = '#fff8e7';
-        ctx.beginPath();
-        ctx.arc(logoX+7,sy,7,0,Math.PI*2);
-        ctx.fill();
-        if (image) {
-          const factor = 13/Math.max(image.naturalWidth,image.naturalHeight);
-          const w = image.naturalWidth*factor, h = image.naturalHeight*factor;
-          ctx.drawImage(image,logoX+7-w/2,sy-h/2,w,h);
-        } else {
-          ctx.save();
-          ctx.fillStyle = '#604b31';
-          ctx.font = '600 8px system-ui,sans-serif';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(school.name[0],logoX+7,sy+.5);
-          ctx.restore();
-        }
+        drawCrest(school,left+12+i*19,sy,7);
       }
       ctx.fillStyle = '#fff4d4';
+      ctx.font = '600 11px system-ui,sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(count,sx+previews.length*9.5,sy+.5);
@@ -160,7 +226,8 @@ const universityLayer = (() => {
   }
 
   function pick(sx,sy) {
-    return markers.find(mark => Math.abs(mark.sx-sx) <= mark.width/2+2 && Math.abs(mark.sy-sy) <= 11)?.region;
+    return markers.find(mark => Math.abs(mark.sx-sx) <= mark.width/2+1 &&
+      Math.abs(mark.sy-sy) <= mark.height/2+1);
   }
 
   function focus(region) {

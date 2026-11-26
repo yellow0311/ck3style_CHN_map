@@ -219,7 +219,8 @@ function setTheme(key) {
         ? number.format(lower)+'–&lt;'+number.format(below) : number.format(lower)+' 及以上';
       return swatch(label,cssColor(color));
     }).join('')+swatch('水域',cssColor(elevationWater));
-    legend += '<p><a href="notes.html#terrain-data">高程数据来源 ↗</a></p>';
+    legend += Object.values(terrainNameStyles).map(({label,color}) => swatch(label,color)).join('');
+    legend += '<p>放大查看更多自然地名。</p><p><a href="notes.html#terrain-data">地形与水系来源 ↗</a></p>';
   } else {
     legend = swatch('辛香风味示例','#a94536')+swatch('沿海及江南风味示例','#548465')+swatch('其他地方风味示例','#a37c40')+'<p>点选图标查看代表食物。</p>';
   }
@@ -522,9 +523,10 @@ function drawBoundaries(bounds,scale,weights) {
   ctx.globalAlpha = 1;
 }
 function drawWater(bounds,scale) {
-  const maxRank = Math.min(10,4+Math.log2(Math.max(1,zoom))*1.4);
-  ctx.fillStyle = theme === 'terrain' ? cssColor(elevationWater) : '#a7c0c0';
-  ctx.strokeStyle = '#89a9ae';
+  const elevation = theme === 'terrain';
+  const maxRank = Math.min(10,(elevation ? 6 : 4)+Math.log2(Math.max(1,zoom))*1.4);
+  ctx.fillStyle = elevation ? cssColor(elevationWater) : '#a7c0c0';
+  ctx.strokeStyle = elevation ? '#6c98a5' : '#89a9ae';
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   for (const feature of waterFeatures) {
@@ -537,6 +539,21 @@ function drawWater(bounds,scale) {
   }
 }
 const labelFamily = '"Songti SC","STSong","Noto Serif CJK SC",SimSun,serif';
+function drawTerrainLabels(screen,reserveLabel,paintLabel) {
+  for (const [kind,name,minZoom,...anchors] of terrainNames) {
+    const alpha = minZoom === 1 ? 1 : smooth(minZoom,minZoom+.45,zoom);
+    if (!alpha) continue;
+    const {size,lift,color} = terrainNameStyles[kind];
+    const fontSize = width > 750 ? size : size-1;
+    for (const [lon,lat] of anchors) {
+      const [sx,sy] = screen(...project(lon,lat));
+      if (reserveLabel(name,sx,sy-lift,fontSize)) {
+        paintLabel(name,sx,sy-lift,fontSize,color,alpha);
+        break;
+      }
+    }
+  }
+}
 function drawLabels(bounds,weights,now) {
   const scale = fit*zoom;
   const screen = (px,py) => [x+px*scale,y+py*scale];
@@ -549,7 +566,8 @@ function drawLabels(bounds,weights,now) {
     ctx.font = '600 '+fontSize+'px '+labelFamily;
     const half = ctx.measureText(text).width/2+4;
     const rect = [px-half,py-9,px+half,py+9];
-    if (occupied.some(([a,b,c,d]) => a < rect[2] && b < rect[3] && c > rect[0] && d > rect[1])) return;
+    if (rect[0] < 3 || rect[2] > width-3 ||
+        occupied.some(([a,b,c,d]) => a < rect[2] && b < rect[3] && c > rect[0] && d > rect[1])) return;
     occupied.push(rect);
     return half;
   }
@@ -635,14 +653,18 @@ function drawLabels(bounds,weights,now) {
     if (half) targetLabels.set(region.id,{region,text,size,offset,lift,half,sx:px+offset,sy:py-lift,
       alpha:alpha*(points && mode===0 ? .56 : 1)});
   }
-  if (selected?.layer === 2) addRegionLabel(selected);
+  const priorityRegion = selected?.layer === 2 || (theme === 'terrain' && selected?.layer != null) ? selected : null;
+  if (priorityRegion) addRegionLabel(priorityRegion);
+  if (theme === 'terrain') drawTerrainLabels(screen,reserveLabel,paintLabel);
   for (const region of directCounties) {
     if (region !== selected) addRegionLabel(region);
   }
   for (let i=2; i>=0; i--) {
-    if (i === 0) layers[0].filter(region => sarLabelDirections[region.id]).forEach(addRegionLabel);
+    if (i === 0) {
+      layers[0].filter(region => region !== priorityRegion && sarLabelDirections[region.id]).forEach(addRegionLabel);
+    }
     for (const region of layers[i]) {
-      if ((i !== 2 || (region !== selected && !region.provinceDirect)) &&
+      if (region !== priorityRegion && (i !== 2 || !region.provinceDirect) &&
           !sarLabelDirections[region.id]) addRegionLabel(region);
     }
   }
@@ -775,7 +797,7 @@ function pick(sx,sy) {
     if (railway) return railway;
   }
   if (theme === 'universities') {
-    const schoolRegion = universityLayer.pick(sx,sy);
+    const schoolRegion = universityLayer.pick(sx,sy)?.region;
     if (schoolRegion) return schoolRegion;
   }
   const point = poiHitboxes.find(p => Math.hypot(sx-p.sx,sy-p.sy) < 11);
@@ -993,7 +1015,7 @@ canvas.addEventListener('pointermove',event => {
   }
   tooltip.hidden = !match;
   if (match) {
-    tooltip.textContent = match.n;
+    tooltip.textContent = (theme === 'universities' && universityLayer.pick(...point)?.school?.name) || match.n;
     tooltip.style.left = Math.min(point[0]+14,width-tooltip.offsetWidth-4)+'px';
     tooltip.style.top = Math.min(point[1]+16,height-tooltip.offsetHeight-4)+'px';
   }

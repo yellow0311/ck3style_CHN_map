@@ -20,7 +20,7 @@
 <h2>数据与覆盖</h2>
 <ul>
 <li>阿里云 DataV 边界数据快照收录 34 个省级、333 个地级、2,870 个县级记录，包含港澳区级资料。台湾部分收录省级轮廓。新疆新星市、白杨市的县级边界及草湖市的政府驻地点位由 OpenStreetMap（ODbL）补充，草湖市全域边界待补。东莞、中山、儋州、嘉峪关下钻后可浏览四市的 76 个镇街及儋州的 3 个办事处，名录来自市政府，边界来自 OpenStreetMap。<a href="https://datav.aliyun.com/portal/school/atlas/area_selector">DataV 地理小工具</a> · <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a></li>
-<li id="terrain-data">「山川地势」使用 Mapzen 数字高程，按海拔由低到高分六档着色。蓝色标记水域，水系轮廓来自 Natural Earth。全国网格间隔为 2 角分，东经 70–140°、北纬 15–55° 范围内放大后载入 30 角秒网格。全球 SRTM、GMTED2010 数据由 USGS 提供，ETOPO1 由 NOAA 提供。<a href="https://registry.opendata.aws/terrain-tiles/">Mapzen 高程数据</a> · <a href="https://github.com/tilezen/joerd/blob/master/docs/attribution.md">完整来源及署名</a> · <a href="https://www.naturalearthdata.com/downloads/10m-physical-vectors/">Natural Earth 水系</a></li>
+<li id="terrain-data">「山川地势」使用 Mapzen 数字高程，按海拔由低到高分六档着色。蓝色标记水域，水系轮廓来自 Natural Earth。主要山脉、高原、盆地、江河和湖泊采用选录标注，按地图缩放级别逐步显示。跨区域江河可在不同河段标注。全国网格间隔为 2 角分，东经 70–140°、北纬 15–55° 范围内放大后载入 30 角秒网格。全球 SRTM、GMTED2010 数据由 USGS 提供，ETOPO1 由 NOAA 提供。<a href="https://registry.opendata.aws/terrain-tiles/">Mapzen 高程数据</a> · <a href="https://github.com/tilezen/joerd/blob/master/docs/attribution.md">完整来源及署名</a> · <a href="https://www.naturalearthdata.com/downloads/10m-physical-vectors/">Natural Earth 水系</a></li>
 <li>文化和饮食采用编辑选取的区域与样本点，适合探索与对照。不同地区内部的风味和文化传统各有差异。</li>
 <li id="city-statistics">省级设色采用 2024 年大陆 31 个省级地区统计。地级数据优先采用 2024 年统计公报和年鉴，缺项可采用相邻年份的同口径数据。GDP 为当年价、单位亿元，人口为年末常住人口、单位万人。图例标出当前视图实际使用的年份，详情逐项标出年份和来源。重庆采用 2024 年区划，綦江区含万盛。香港采用 2024 年陆上非住院人口，澳门采用 2021 年陆地面积及 13–35 岁普查人口。缺项显示「暂无数据」。<a href="https://tjj.gansu.gov.cn/tjj/c117468/202505/174143566/files/4db368f09fac4efb95b5d73aa316e1bf.pdf">省级数据来源</a></li>
 </ul>
@@ -28,7 +28,7 @@
 <ul>
 <li>大陆普通高校以教育部截至 2026 年 6 月 17 日的名录为准，收录全部 1,412 所普通本科学校。另收录当年面向普通高中毕业生招生的 22 所军队院校，以及有公开资料的研究生层次办学机构。<a href="https://www.moe.gov.cn/jyb_xxgk/s5743/s5744/A03/202606/t20260618_1441074.html">教育部名录</a> · <a href="https://www.mod.gov.cn/gfbw/gffw/16469120.html">国防部招生资料</a></li>
 <li>港澳按各自公布的院校名录汇总。台湾部分按 114 学年度名录中的校本部所在地和办学类型统计，地图以城市或县的点位显示院校汇总。<a href="https://www.edb.gov.hk/en/edu-system/postsecondary/local-higher-edu/institutions/index.html">香港教育局</a> · <a href="https://portal.dsedj.gov.mo/webdsejspace/site/studyinmacau/tc/campus-information.html">澳门教育及青年发展局</a> · <a href="https://udb.moe.edu.tw/ulist/Resource">台湾院校名录</a></li>
-<li>城市列表里，同一院校在当地的多个校区合计一所，跨地级行政区的已核验校区分别计入所在地区。全国与省级汇总按院校去重，地图标记位于地级行政区内的代表点。异地校区和只招研究生的院校仍有待核验的记录。校徽从教育在线、软科或招生机构目录按需加载，缺失时显示校名文字。</li>
+<li>城市列表里，同一院校在当地的多个校区合计一所，跨地级行政区的已核验校区分别计入所在地区。全国与省级汇总按院校去重。放大后，各校校徽在所在地区代表点附近排列，位置精度为地级行政区。屏幕空间不足时，剩余院校合并显示数量。异地校区和只招研究生的院校仍有待核验的记录。校徽从教育在线、软科或招生机构目录按需加载，缺失时显示校名文字。</li>
 <li>985、211 沿用历史工程名单，双一流采用第二轮建设名单。教育部直属依照院校主管部门标注。中外／港澳合作筛选以独立列明的合作办学院校为主。“省重点”采用已核验的地方建设批次，详情附有对应来源。<a href="https://www.moe.gov.cn/srcsite/A22/s7065/202202/t20220211_598710.html">第二轮双一流名单</a> · <a href="https://www.crs.jsj.edu.cn/index/sort/1006">合作办学监管平台</a></li>
 </ul>
 <h2 id="railway-data">铁路网络的数据口径</h2>
