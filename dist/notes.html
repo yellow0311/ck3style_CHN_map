@@ -1,0 +1,37 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>图志手记 · 山河舆图</title><style>
+:root{background:#ece4cc;color:#2b362d;font:17px/1.8 "Songti SC","STSong",Georgia,serif}body{margin:0}header{background:#25312c;color:#ece4cc;border-bottom:2px solid #aa8e58;padding:12px max(24px,calc((100% - 780px)/2))}header a{color:inherit;text-decoration:none;white-space:nowrap}main{max-width:780px;margin:0 auto;padding:42px 24px 60px}h1{font-size:clamp(36px,7vw,62px);line-height:1.2;margin:0;letter-spacing:.12em}h2{font-size:25px;margin-top:34px;border-bottom:1px solid #b1a17a;padding-bottom:7px}h3{font-size:18px;margin-bottom:4px}p{margin-top:4px}a{color:#833e2c;text-underline-offset:4px}li+li{margin-top:10px}.intro{font-size:21px;margin-top:14px;color:#5d5948}table{width:100%;border-collapse:collapse}th,td{text-align:left;border-bottom:1px solid #cabea3;padding:8px;vertical-align:top}th{white-space:nowrap}small{color:#6e634d}
+</style></head><body><header><a href="./">← 返回山河舆图</a></header><main>
+<h1>图志手记</h1><p class="intro">从《十字军之王 III》的地图设计到中国分层地理图集</p>
+<h2>CK3 如何让一张地图承载不同尺度</h2>
+<table><thead><tr><th>视角</th><th>CK3 的地图表现</th><th>山河舆图的对应设计</th></tr></thead><tbody>
+<tr><th>远景</th><td>纸图突出领地轮廓和大地名，适于总览。</td><td>用浅色晕渲、较大的省名和行政填色建立全国格局。</td></tr>
+<tr><th>中景</th><td>三维地形上的政治覆盖显示领地关系，便于选中统治者与属地。</td><td>显示所选省份的地级边界和地名，同时保留较粗的省界，便于辨认隶属。</td></tr>
+<tr><th>近景</th><td>领地色减弱，郡名和地形细节更明显。</td><td>用较细的县界叠加县名。滚轮围绕指针缩放。</td></tr>
+</tbody></table>
+<p>开发日志第 2 篇阐述了远、中、近景的分工，第 25 篇进一步说明视角如何改变领地视图的信息，以及文化、信仰等地图模式如何支持专题阅读。第 177 篇记录了地形材质、光照和跨缩放过渡的更新，特别提到边界与渲染效果突然弹出的问题。<a href="https://store.steampowered.com/news/posts/?appids=1158310&amp;enddate=1573748835">开发日志 2</a> · <a href="https://store.steampowered.com/news/posts/?appids=1158310&amp;enddate=1589472741">开发日志 25</a> · <a href="https://www.youtube.com/watch?v=mX7UKC9w7aI">开发日志 177</a></p>
+<h2>把这个思路用于中国地图</h2>
+<h3>逐级查看行政区划，在同一位置切换专题</h3>
+<p>点选四川后，省内地级边界逐渐显现，其他省份同步淡化。再点选成都可查看其县级边界，四川省内其他地级行政区轻度淡化。点底部的「地级」可返回省内地级视图，点地图空白处可回到全国。切换层级时保留当前视角。在山川地势中也可逐级点选，并对照海拔图例辨认盆地与外围山地。</p>
+<p>直辖市、香港及澳门直接进入区县或分区视图，可点选地图边界内的区域，或用详情卡里的下拉菜单查看。切换时底色先变淡，随后显出边界和地名。</p>
+<h3>用渐变表示文化核心，用点表示饮食样本</h3>
+<p>巴蜀、荆楚、江南等文化范围存在交叠且随历史变化，用核心周围的渐变表达影响范围的模糊性。饮食风物以城市为样本点，点选可看代表食物。同一城市也可以逐步扩充多个饮食传统。</p>
+<h3>统计口径在缩放中保持可辨</h3>
+<p>GDP 与人口在全国总览按省级数值着色，切到全国地级视图使用统一的地级色阶。进入某个省份后，图例按省内已有数据分为最多五档，颜色越深表示数值越高。灰色表示缺少该项数据。点选地级行政区可查看当地的 GDP、常住人口和数据来源。</p>
+<h2>数据与覆盖</h2>
+<ul>
+<li>阿里云 DataV 边界数据快照收录 34 个省级、333 个地级、2,870 个县级记录，包含港澳区级资料。台湾部分收录省级轮廓。新疆新星市、白杨市的县级边界及草湖市的政府驻地点位由 OpenStreetMap（ODbL）补充，草湖市全域边界待补。东莞、中山、儋州、嘉峪关下钻后可浏览四市的 76 个镇街及儋州的 3 个办事处，名录来自市政府，边界来自 OpenStreetMap。<a href="https://datav.aliyun.com/portal/school/atlas/area_selector">DataV 地理小工具</a> · <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a></li>
+<li id="terrain-data">「山川地势」使用 Mapzen 数字高程，按海拔由低到高分六档着色。蓝色标记水域，水系轮廓来自 Natural Earth。全国网格间隔为 2 角分，东经 70–140°、北纬 15–55° 范围内放大后载入 30 角秒网格。全球 SRTM、GMTED2010 数据由 USGS 提供，ETOPO1 由 NOAA 提供。<a href="https://registry.opendata.aws/terrain-tiles/">Mapzen 高程数据</a> · <a href="https://github.com/tilezen/joerd/blob/master/docs/attribution.md">完整来源及署名</a> · <a href="https://www.naturalearthdata.com/downloads/10m-physical-vectors/">Natural Earth 水系</a></li>
+<li>文化和饮食采用编辑选取的区域与样本点，适合探索与对照。不同地区内部的风味和文化传统各有差异。</li>
+<li id="city-statistics">省级设色采用 2024 年大陆 31 个省级地区统计。地级数据优先采用 2024 年统计公报和年鉴，缺项可采用相邻年份的同口径数据。GDP 为当年价、单位亿元，人口为年末常住人口、单位万人。图例标出当前视图实际使用的年份，详情逐项标出年份和来源。重庆采用 2024 年区划，綦江区含万盛。香港采用 2024 年陆上非住院人口，澳门采用 2021 年陆地面积及 13–35 岁普查人口。缺项显示「暂无数据」。<a href="https://tjj.gansu.gov.cn/tjj/c117468/202505/174143566/files/4db368f09fac4efb95b5d73aa316e1bf.pdf">省级数据来源</a></li>
+</ul>
+<h2 id="university-data">大学分布的数据口径</h2>
+<ul>
+<li>大陆普通高校以教育部截至 2026 年 6 月 17 日的名录为准，收录全部 1,412 所普通本科学校。另收录当年面向普通高中毕业生招生的 22 所军队院校，以及有公开资料的研究生层次办学机构。<a href="https://www.moe.gov.cn/jyb_xxgk/s5743/s5744/A03/202606/t20260618_1441074.html">教育部名录</a> · <a href="https://www.mod.gov.cn/gfbw/gffw/16469120.html">国防部招生资料</a></li>
+<li>港澳按各自公布的院校名录汇总。台湾部分按 114 学年度名录中的校本部所在地和办学类型统计，地图以城市或县的点位显示院校汇总。<a href="https://www.edb.gov.hk/en/edu-system/postsecondary/local-higher-edu/institutions/index.html">香港教育局</a> · <a href="https://portal.dsedj.gov.mo/webdsejspace/site/studyinmacau/tc/campus-information.html">澳门教育及青年发展局</a> · <a href="https://udb.moe.edu.tw/ulist/Resource">台湾院校名录</a></li>
+<li>城市列表里，同一院校在当地的多个校区合计一所，跨地级行政区的已核验校区分别计入所在地区。全国与省级汇总按院校去重，地图标记位于地级行政区内的代表点。异地校区和只招研究生的院校仍有待核验的记录。校徽从教育在线、软科或招生机构目录按需加载，缺失时显示校名文字。</li>
+<li>985、211 沿用历史工程名单，双一流采用第二轮建设名单。教育部直属依照院校主管部门标注。中外／港澳合作筛选以独立列明的合作办学院校为主。“省重点”采用已核验的地方建设批次，详情附有对应来源。<a href="https://www.moe.gov.cn/srcsite/A22/s7065/202202/t20220211_598710.html">第二轮双一流名单</a> · <a href="https://www.crs.jsj.edu.cn/index/sort/1006">合作办学监管平台</a></li>
+</ul>
+<h2 id="railway-data">铁路网络的数据口径</h2>
+<p>铁路图层选取主要跨区域客运线、普速客货干线，以及重点煤运和港口货运线路。红实线表示高铁与客运专线，蓝实线表示普速客货干线，赭色虚线表示重点货运线。铁路按主要用途归类。圆点表示客站，方点表示货运节点。可按线路查看已收录的车站，放大可读更多站名。</p>
+<p>轨道矢量与站点来自 OpenStreetMap。详情中的链接可打开相应关系或点位。当前覆盖 63 条线路和 853 个车站记录，包含代表性车站，客运车次、经停与货运办理情况以运营方公告为准。<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors（ODbL）</a> · <a href="https://app.www.gov.cn/govdata/gov/202201/07/480497/article.html">国务院推进多式联运工作方案</a></p>
+</main></body></html>
