@@ -4,7 +4,7 @@
   const status = byId('placeSearchStatus');
   const form = input.form;
   const collator = new Intl.Collator(atlasLocale);
-  const normalize = text => text.normalize(atlasFR ? 'NFKD' : 'NFKC').toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');
+  const normalize = text => text.normalize(atlasFR || atlasUS ? 'NFKD' : 'NFKC').toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');
   const shortNames = {
     '150000':'内蒙古', '450000':'广西', '540000':'西藏', '640000':'宁夏', '650000':'新疆',
     '810000':'香港', '820000':'澳门'
@@ -13,7 +13,7 @@
   let active = -1;
   let indexedRecords;
   let index = [];
-  const shortName = name => name.replace(/(?:省|市|县|区|街道|镇)$/,'');
+  const shortName = name => name.replace(atlasUS ? /(?:普查指定地区|自治市镇|规划区|乡镇|州|市|县|村|镇)$/ : /(?:省|市|县|区|街道|镇)$/,'');
 
   function updateIndex() {
     if (indexedRecords === records) return;
@@ -25,9 +25,10 @@
       const name = normalize(chineseName(region));
       const alias = normalize(shortNames[region.id] ?? shortName(chineseName(region)));
       const original = normalize(sourceName(region) || '');
+      const extraNames = region.aliases?.map(normalize) || [];
       const paths = [normalize(chineseParents.join(''))+name,normalize(chineseParents.map(shortName).join(''))+alias];
       if (original) paths.push(normalize(administrativeParents(region,originalName).join(''))+original);
-      return {region,parents:showOriginal ? administrativeParents(region) : chineseParents,name,alias,original,paths};
+      return {region,parents:showOriginal ? administrativeParents(region) : chineseParents,name,alias,original,paths,extraNames};
     });
   }
 
@@ -55,15 +56,16 @@
     updateIndex();
     const words = input.value.trim().split(/[\s/／·,，]+/).map(normalize).filter(Boolean);
     candidates = index.flatMap(entry => {
-      const {region,name,alias,original,paths} = entry;
+      const {region,name,alias,original,paths,extraNames} = entry;
       let rank;
       if (region.id.toLowerCase() === query || region.code?.toLowerCase() === query || name === query || original === query) rank = 0;
-      else if (alias === query) rank = 1;
+      else if (alias === query || extraNames.includes(query)) rank = 1;
       else if (name.startsWith(query) || original.startsWith(query)) rank = 2;
       else if (name.includes(query) || original.includes(query) || region.id.toLowerCase().startsWith(query)) rank = 3;
       else if (paths.some(path => path.endsWith(query) || (words.length > 1 && words.every(word => path.includes(word))))) rank = 4;
       return rank === undefined ? [] : [{...entry,rank}];
     }).sort((a,b) => a.rank-b.rank || a.region.layer-b.region.layer ||
+      (atlasUS && a.region.locality && b.region.locality ? (b.region.population ?? -1)-(a.region.population ?? -1) : 0) ||
       collator.compare(a.region.n,b.region.n) || a.region.id.localeCompare(b.region.id)).slice(0,9);
 
     list.replaceChildren(...candidates.map(({region,parents},i) => {

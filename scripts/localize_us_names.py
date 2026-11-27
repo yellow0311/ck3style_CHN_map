@@ -19,8 +19,8 @@ def localize(directory):
         )
 
     admin = read("admin-boundaries.json")
-    for county in admin["county"]:
-        county["n"] = names["counties"][county["id"]]
+    for county in admin["city"] or admin["county"]:
+        county["n"] = names["counties"].get(county["id"], county["n"])
     save("admin-boundaries.json", admin)
 
     colleges = read("universities.json")

@@ -238,6 +238,11 @@ const universityLayer = (() => {
   }
 
   function focus(region) {
+    if (atlasUS) {
+      const state = records.get(provinceId(region));
+      if (state) setLevel(1,state);
+      return;
+    }
     if (!atlasCN) {
       focusRegion(region);
       return;

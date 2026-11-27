@@ -13,7 +13,9 @@
 <h3>逐级查看行政区划，在同一位置切换专题</h3>
 <p>点选四川后，省内地级边界逐渐显现，其他省份同步淡化。再点选成都可查看其县级边界，四川省内其他地级行政区轻度淡化。点底部的「地级」可返回省内地级视图，点地图空白处可回到全国。切换层级时保留当前视角。在山川地势中也可逐级点选，并对照海拔图例辨认盆地与外围山地。</p>
 <p>直辖市、香港及澳门直接进入区县或分区视图，可点选地图边界内的区域，或用详情卡里的下拉菜单查看。切换时底色先变淡，随后显出边界和地名。</p>
+<p id="china-boundaries">中国地图放大后按省加载更密的边界点，保留现有行政区代码和层级。省、地、县边界按代码匹配 AreaCity 矢量数据，并以 OpenStreetMap 补充部分区域。范围差异较大的区域沿用原轮廓。香港采用民政事务总署的 18 区数据，按陆域轮廓裁切显示。澳门陆域轮廓由 OpenStreetMap 的各堂区及路氹填海区拼合。全国视图在主图上绘制港澳的详细轮廓。<a href="https://github.com/xiangyuecn/AreaCity-JsSpider-StatsGov">AreaCity</a> · <a href="https://data.gov.hk/en-data/dataset/hk-had-json1-hong-kong-administrative-boundaries">香港区界</a> · <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors（ODbL）</a></p>
 <p>中国图集保留人文地理和饮食风物。历史文化区域用渐变呈现，城市食物标记可点选查看说明。</p>
+<p>中国主图的省、地两级边界按行政管理口径绘制。加格达奇、松岭两区地权属内蒙古，主图将两区随黑龙江省大兴安岭地区着色，进入大兴安岭地区后可点选两区。<a href="https://www.dxal.gov.cn/dxal/c100055/202510/c13_321398.shtml">大兴安岭地区行政公署规划说明</a></p>
 <h3>统计口径在缩放中保持可辨</h3>
 <p>GDP 与人口在全国总览按省级数值着色，切到全国地级视图使用统一的地级色阶。进入某个省份后，图例按省内已有数据分为最多五档，颜色越深表示数值越高。灰色表示缺少该项数据。点选地级行政区可查看当地的 GDP、常住人口和数据来源。</p>
 <h2>数据与覆盖</h2>
@@ -50,8 +52,11 @@
 <h3 id="uk-aviation">民航机场</h3>
 <p>英国地图收录 53 座定期客运机场，按 CAA 2025 年航站楼旅客人次分档。41 座机场有 CAA 2025 年定期客运航线记录，线条连接图内机场，图外目的地列在详情。统计反映该年度实际有定期客运记录的航点，最新执飞信息以航空公司为准。 <a href="https://www.caa.co.uk/data-and-analysis/uk-aviation-market/airports/uk-airport-data/uk-airport-data-2025/annual-2025/">英国 CAA，表 09、12.1 和 12.2</a> · <a href="https://airportmiles.com/data">机场坐标（CC0）</a></p>
 <h2 id="us-data">美国图集的数据口径</h2>
-<p>行政图覆盖 50 州、哥伦比亚特区和 3,137 个县及同级辖区，含路易斯安那州堂区和阿拉斯加的县级同等单元。州与县均可切换中英文，搜索支持两种名称和 FIPS 编码。三个地图区域可分别定位，海外领地未纳入。边界采用依据美国人口普查局资料整理的简化矢量。 <a href="https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html">人口普查局边界</a> · <a href="https://services9.arcgis.com/GDVaV4SDJDDBT8gi/arcgis/rest/services/US_Boundaries_Semi_General_V2/FeatureServer">简化边界服务</a></p>
-<p>州和县级专题使用 BEA 的 2024 年现价 GDP 与年中人口，单位分别为亿美元和万人。本图所列辖区中 3,091 个有独立统计值。BEA 在夏威夷、弗吉尼亚州等处将部分县和独立市合并统计，地图保留各辖区边界，缺少独立数值的地区用灰色标示。 <a href="https://www.bea.gov/data/gdp/gdp-county-metro-and-other-areas">BEA 地方 GDP</a> · <a href="https://www.bea.gov/data/income-saving/personal-income-county-metro-and-other-areas">BEA 年中人口</a></p>
+<p>行政图覆盖 50 州、哥伦比亚特区以及 3,144 个县及同级辖区，含路易斯安那州堂区、阿拉斯加自治市镇和人口普查区、康涅狄格规划区及独立市。各层级支持中英文和 FIPS 搜索。全图、阿拉斯加与夏威夷可分别定位。 <a href="https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.2025.html">人口普查局 2025 年县和市镇矢量边界</a></p>
+<p>州和县级采用 BEA 的 2024 年现价 GDP 与年中人口。3,091 个县及同级辖区有独立的 BEA 统计值。新增的 7 个弗吉尼亚独立市使用人口普查局 2024 年人口估计。BEA 合并统计造成的缺项用灰色标示。 <a href="https://www.bea.gov/data/gdp/gdp-county-metro-and-other-areas">BEA 地方 GDP</a> · <a href="https://www.bea.gov/data/income-saving/personal-income-county-metro-and-other-areas">BEA 年中人口</a></p>
+<h3 id="us-localities">市镇等地方单位</h3>
+<p>市镇级收录约 3.2 万个建制市、镇、村、自治市镇、有地方职能的县分区及夏威夷的 163 个人口普查指定地区。建制村和乡镇在纽约等州可能重叠，人口按美国人口普查局各辖区口径显示，不能相加。独立市、同界市县和哥伦比亚特区可在县级图查看。 <a href="https://www.census.gov/programs-surveys/popest/about/glossary/geo-terms.html">美国人口普查局地理术语</a></p>
+<p>跨县城市按所在县显示边界，详情列出县内辖区人口及完整辖区人口。大多数市镇使用 2025 年年中人口估计。夏威夷的指定地区为统计区域，使用 2020 年人口普查数据。市镇级暂无同口径 GDP。 <a href="https://www.census.gov/data/tables/time-series/demo/popest/2020s-total-cities-and-towns.html">美国人口普查局市镇人口估计</a> · <a href="https://www2.census.gov/programs-surveys/decennial/2020/data/01-Redistricting_File--PL_94-171/Hawaii/hi2020.pl.zip">夏威夷人口普查数据</a></p>
 <p>美国行政区、高校、机场和车站的常见名称采用通行译名。部分小地名和机构名称参考 GeoNames 或按原名音译，FIPS、IATA 和道路编号保留原编号。 <a href="https://www.geonames.org/export/">GeoNames 地名库</a></p>
 <h3 id="us-terrain">地形与地名</h3>
 <p>使用 Mapzen 数字高程格网和 Natural Earth 矢量水系，补充落基山脉、密西西比河、五大湖、迪纳利峰和夏威夷火山等自然地理标注。 <a href="https://registry.opendata.aws/terrain-tiles/">Mapzen</a> · <a href="https://www.naturalearthdata.com/downloads/10m-physical-vectors/">Natural Earth</a></p>

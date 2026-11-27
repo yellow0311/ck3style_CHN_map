@@ -66,6 +66,9 @@ let layers = [[],[],[]];
 let directCounties = [];
 const metricRegionsByProvince = new Map();
 const localRegionsByNation = [new Map(),new Map(),new Map()];
+const usLocalitiesByCounty = new Map();
+const usLocalityLoads = new Map();
+const usLocalityTypes = ['市','镇','村','自治市镇','乡镇','普查指定地区','市县合并区','镇级辖区','保留地'];
 const localMetricScales = new Map();
 const missingMetricColor = '#b6b4a7';
 let autonomyLayers = autonomyCategories.map(() => []);
@@ -90,6 +93,7 @@ const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const levelButtons = [...byId('adminLevels').querySelectorAll('button')];
 const districtPicker = byId('districtPicker');
 const provinceId = region => !atlasCN ? region.nation : region.id.slice(0,2)+'0000';
+const maxMapZoom = atlasCN ? 160 : 95;
 const isFocused = region => !focusedProvince || provinceId(region) === focusedProvince.id;
 const childWeight = (region,weights) =>
   weights.get(region.p)?.[region.town ? 'town' : region.provinceDirect ? 'directCounty' : 'county'] ?? 0;
@@ -232,11 +236,14 @@ function restoreLanguageView() {
 }
 function cityMetricYear(id,index) {
   if (atlasFR) return localStatistics[id]?.[index+2] ?? (index === 1 || mode>0 ? 2023 : 2024);
+  if (atlasUS && index === 1) return records.get(id)?.populationYear ??
+    (!id && mode === 2 ? (focusedProvince?.id === '15' ? 2020 : 2025) : 2024);
   return atlasJP ? [2023,2025][index] : atlasUS ? 2024 : atlasUK ? [2024,2025][index] : cityStatistics.years?.[id]?.[index] ?? cityStatistics.year;
 }
-const metricValues = region => !atlasCN ? localStatistics[region.id] : region.layer === 0
+const metricValues = region => !atlasCN ? region.stats ?? localStatistics[region.id] : region.layer === 0
   ? indicators[region.id.slice(0,2)] : cityStatistics.regions[region.id];
 function localMetricPeers(province,level = mode,city = focusedCity) {
+  if (atlasUS && level === 2 && city) return usLocalitiesByCounty.get(city.id) || [];
   const peers = province ? localRegionsByNation[level].get(province.id) || [] : layers[level];
   return city && level === 2 ? peers.filter(region => region.p === city.id) : peers;
 }
@@ -252,7 +259,7 @@ function metricScale(key,province) {
   const palette = levelBreaks ? figures.levelColors : figures.cityColors ?? figures.colors;
   const scale = {breaks:levelBreaks ?? figures.cityBreaks,colors:palette,covered:covered.length,total:peers.length,yearLabel};
   localMetricScales.set(cacheKey,scale);
-  if (!province) return scale;
+  if (!province || (atlasUS && mode === 2 && !focusedCity)) return scale;
   const values = covered.map(region => metricValues(region)[figures.index]).sort((a,b) => a-b);
   const groups = Math.min(palette.length,new Set(values).size);
   const limits = new Set();
@@ -274,13 +281,16 @@ function usesCityMetrics() {
     (!focusedProvince || metricRegionsByProvince.has(focusedProvince.id)));
 }
 function metricLegend(key) {
+  const usLocal = atlasUS && mode === 2;
+  if (usLocal && key === 'gdp') return '<p>'+ui('市镇级暂无同口径 GDP 数据。')+'</p>'+
+    swatch(ui('暂无同口径数据'),missingMetricColor);
   const figures = statistics[key];
   const city = usesCityMetrics();
   const scale = city ? metricScale(key,focusedProvince) : figures;
   const scope = !atlasCN ? (city ? (focusedCity || focusedProvince)?.n || levelNames[mode] : atlasFR ? '18 个大区' : atlasJP ? '47 个都道府县' : atlasUS ? '50 州与哥伦比亚特区' : '英国四个组成国') :
     city ? focusedProvince?.n || '全国地级' : '大陆 31 个省级地区';
   let legend = '<p>'+(atlasJP && key === 'gdp' ? ui('{year} 财年',{year:cityMetricYear('',figures.index)}) : city ? scale.yearLabel : ui('{year} 年',{year:cityMetricYear('',figures.index)}))+' · '+ui(scope)+'<br>'+ui(figures.unit)+
-    ' · '+ui(key === 'gdp' ? '当年价' : atlasFR ? '基准人口' : atlasJP ? '全国人口普查' : !atlasCN ? '年中常住' : '年末常住')+'</p>';
+    ' · '+ui(key === 'gdp' ? '当年价' : atlasFR ? '基准人口' : atlasJP || (usLocal && focusedProvince?.id === '15') ? '全国人口普查' : !atlasCN ? '年中常住' : '年末常住')+'</p>';
   legend += scale.colors.map((color,i) => {
     const low = scale.breaks[i-1] ?? scale.minimum;
     const high = scale.breaks[i];
@@ -288,11 +298,12 @@ function metricLegend(key) {
       low !== undefined ? '≥ '+number.format(low) : '&lt; '+number.format(high);
     return swatch(range,color);
   }).join('') + swatch(ui('暂无同口径数据'),missingMetricColor);
-  if (city && scale.total) legend += '<p>'+(focusedProvince ? ui(!atlasCN ? '按当前地区分档' : '按省内数值分档')+' · ' : '')+
+  if (city && scale.total) legend += '<p>'+(focusedProvince && (!usLocal || focusedCity) ? ui(!atlasCN ? '按当前地区分档' : '按省内数值分档')+' · ' : '')+
     ui('{n} / {total} 有数据',{n:scale.covered,total:scale.total})+'</p>';
   const statSource = atlasFR && key === 'gdp' && city ? frSources.gdpDepartment :
-    atlasUK && key === 'gdp' && mode < 2 ? ukSources.gdpRegional : atlasStatSources[key];
-  legend += !atlasCN ? '<p><a href="'+statSource+'">'+ui(atlasFR ? key === 'gdp' && city ? '欧盟统计局' : '法国国家统计与经济研究所' : atlasJP ? key === 'gdp' ? '日本内阁府' : '日本总务省统计局' : atlasUS ? '美国经济分析局（BEA）' : '英国国家统计局（ONS）')+' ↗</a></p>' :
+    atlasUK && key === 'gdp' && mode < 2 ? ukSources.gdpRegional : usLocal ?
+      (focusedProvince?.id === '15' ? usSources.hawaiiPopulation : usSources.localPopulation) : atlasStatSources[key];
+  legend += !atlasCN ? '<p><a href="'+statSource+'">'+ui(atlasFR ? key === 'gdp' && city ? '欧盟统计局' : '法国国家统计与经济研究所' : atlasJP ? key === 'gdp' ? '日本内阁府' : '日本总务省统计局' : atlasUS ? usLocal ? '美国人口普查局' : '美国经济分析局（BEA）' : '英国国家统计局（ONS）')+' ↗</a></p>' :
     city ? '<p>点选地区查看数值和来源。</p>' :
     '<p><a href="'+statsSource+'" target="_blank" rel="noopener">《2025 甘肃统计提要》↗</a></p>';
   if (atlasFR && key === 'gdp' && mode === 2) legend += '<p>'+ui('行政专区暂无同口径 GDP 数据。')+'</p>';
@@ -308,7 +319,9 @@ function administrativeLegend() {
   if (atlasFR) return ['大区边界','省界','行政专区边界'].map((label,i) =>
     '<div class="legendrow"><i class="line '+['','city','county'][i]+'"></i>'+label+'</div>').join('');
   if (atlasJP) return '<div class="legendrow"><i class="line"></i>都道府县边界</div><div class="legendrow"><i class="line county"></i>市区町村边界</div>';
-  if (atlasUS) return '<div class="legendrow"><i class="line"></i>州与联邦特区边界</div><div class="legendrow"><i class="line county"></i>县及同级辖区</div>';
+  if (atlasUS) return ['州与联邦特区边界','县及同级辖区','市镇等地方单位边界'].map((label,i) =>
+    '<div class="legendrow"><i class="line '+['','city','county'][i]+'"></i>'+ui(label)+'</div>').join('')+
+    (focusedProvince?.id === '15' ? '<p>'+ui('夏威夷市镇级显示人口普查指定地区。')+'</p>' : '');
   const labels = atlasUK ? ['组成国边界','英格兰大区边界',ui('{area}边界',{area:ui(local || levelNames[2])})] :
     ['省级政区','地级政区',township ? township.label+'边界' : local ? local+'边界' : '县级政区'];
   let legend = labels.map((name,i) => '<div class="legendrow"><i class="line '+['','city','county'][i]+'"></i>'+name+'</div>').join('');
@@ -320,6 +333,7 @@ function administrativeLegend() {
   if (township?.boundaryCount || direct.some(region => region.osmRelation || region.osmNode)) {
     legend += '<p><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors</a></p>';
   }
+  if (atlasCN) legend += '<p><a href="'+atlasNotes('china-boundaries')+'">行政边界来源 ↗</a></p>';
   return legend;
 }
 function autonomyLegend() {
@@ -354,7 +368,7 @@ for (const legend of [byId('legend'),byId('mobileLegend')]) {
 function setTheme(key) {
   const keepRegion = (theme === 'terrain' || key === 'terrain' || key === 'universities') &&
     selected?.layer != null && !selected.universityPlace &&
-    (key !== 'universities' || !atlasCN || selected.layer < 2 || selected.provinceDirect);
+    (key !== 'universities' || !(atlasCN || atlasUS) || selected.layer < 2 || selected.provinceDirect);
   theme = key;
   for (const link of countryButtons) {
     const query = new URLSearchParams();
@@ -374,7 +388,7 @@ function setTheme(key) {
   document.body.classList.toggle('university-view',key === 'universities');
   document.body.classList.toggle('railway-view',key === 'railway');
   document.body.classList.toggle('airport-view',key === 'airports');
-  if (atlasCN && key === 'universities' && mode > 1) {
+  if ((atlasCN || atlasUS) && key === 'universities' && mode > 1) {
     setLevel(focusedProvince && districtLevelNames[focusedProvince.id] ? 0 : 1,focusedProvince);
   }
   hovered = null;
@@ -482,6 +496,15 @@ function setLevel(level,province,city = null) {
   mode = level;
   focusedProvince = province;
   focusedCity = city;
+  if (atlasUS) {
+    const state = usLocalityLoads.get(province?.id);
+    if (level === 2) {
+      layers[2] = state?.regions ?? [];
+      if (!state || state.error) loadUSLocalities(province);
+    } else if (!province || layers[2][0]?.nation !== province.id) {
+      layers[2] = [];
+    }
+  }
   viewTransition = from.size && !reducedMotion.matches
     ? {from,to:viewWeights(level,province,city),start,labels:displayedLabels} : null;
   hovered = null;
@@ -498,12 +521,14 @@ function updateLevel() {
   const university = theme === 'universities';
   const provinceHasCities = !focusedProvince || (university && atlasCN
     ? !districtLevelNames[focusedProvince.id] : layers[1].some(region => region.p === focusedProvince.id));
-  const provinceHasCounties = !focusedProvince || layers[2].some(region => isFocused(region));
+  const provinceHasCounties = atlasUS ? Boolean(localMetricPeers(focusedProvince,2,focusedCity).length) :
+    !focusedProvince || layers[2].some(region => isFocused(region));
   for (const [level,button] of levelButtons.entries()) {
     button.setAttribute('aria-pressed',level === mode);
-    button.disabled = (level === 1 && !provinceHasCities) || (level === 2 && ((university && atlasCN) || (!provinceHasCounties && !township)));
+    button.disabled = (level === 1 && !provinceHasCities) || (level === 2 && ((university && (atlasCN || atlasUS)) || (!provinceHasCounties && !township)));
   }
   levelButtons[2].textContent = township?.label || ui(districtLevel) || levelNames[2];
+  if (atlasUS) levelButtons[2].title = focusedProvince ? '' : ui('选择州后查看市镇，也可直接搜索市镇。');
   const levelName = mode === 2 ? levelButtons[2].textContent : levelNames[mode];
   byId('level').textContent = ui('{label}视图',{label:levelName});
   const scope = (focusedCity || focusedProvince)?.n || ui('全国');
@@ -518,11 +543,13 @@ function updateLevel() {
   const localCoverage = !focusedProvince || layers[mode].some(region =>
     focusedCity ? region.p === focusedCity.id : isFocused(region));
   const caption = scope+' · '+levelName+(!atlasCN || township || levelName === '分区' ? '' : '政区');
-  const coverage = township && township.boundaryCount < township.units.length
+  const localLoad = atlasUS && mode === 2 ? usLocalityLoads.get(focusedProvince?.id) : null;
+  const coverage = localLoad && !localLoad.regions ? caption+' · '+ui(localLoad.error ? '市镇边界载入失败，请重新选择市镇级。' : '正在载入市镇边界…') :
+    township && township.boundaryCount < township.units.length
     ? caption+(township.boundaryCount ? ' · 部分边界' : ' · 名录')
     : focusedProvince && !provinceHasCities && !provinceHasCounties ? scope+' · 仅收录省级边界'
     : localCoverage ? caption : scope+' · '+ui('暂无{level}边界',{level:levelName});
-  const suffix = statistics[theme] ? (!atlasCN ? ' · '+ui(atlasJP && theme === 'gdp' ? '{year} 财年' : '{year} 年',{year:cityMetricYear('',statistics[theme].index)}) :
+  const suffix = statistics[theme] && !(atlasUS && mode === 2 && theme === 'gdp') ? (!atlasCN ? ' · '+ui(atlasJP && theme === 'gdp' ? '{year} 财年' : '{year} 年',{year:cityMetricYear('',statistics[theme].index)}) :
     usesCityMetrics() ? ' · 地级统计' : ' · 2024 年省级统计') : '';
   const plate = byId('plateLevel');
   if (plate.textContent !== coverage+suffix) plate.textContent = coverage+suffix;
@@ -564,10 +591,14 @@ function path(region, detailed = false) {
   return region[cacheKey] = boundary;
 }
 function mapPath(region) {
+  if (atlasCN) {
+    const boundary = chinaBoundaries.boundary(region);
+    if (boundary !== region) return path(boundary);
+  }
   return path(region,region === focusedProvince || region === focusedCity);
 }
 function visible(region,bounds) {
-  const [a,b,c,d] = region.b;
+  const [a,b,c,d] = (atlasCN ? chinaBoundaries.boundary(region) : region).b;
   return a <= bounds[2] && c >= bounds[0] && b <= bounds[3] && d >= bounds[1];
 }
 function provinceColor(region) {
@@ -582,6 +613,7 @@ function draw(now) {
   const scale = fit*zoom;
   const elevation = theme === 'terrain';
   const bounds = [-x/scale,-y/scale,(width-x)/scale,(height-y)/scale];
+  if (atlasCN) chinaBoundaries.loadVisible(bounds);
   const geographic = [...unproject(bounds[0],bounds[3]),...unproject(bounds[2],bounds[1])];
   const weights = currentWeights(now);
   const terrainAvailable = !atlasFR || (geographic[0] < 10 && geographic[2] > -6 && geographic[1] < 52 && geographic[3] > 41);
@@ -613,7 +645,7 @@ function draw(now) {
       ctx.fillRect(px-size,py-size,2*size,2*size);
     }
   }
-  const outside = new Path2D(country);
+  const outside = new Path2D(atlasCN ? chinaBoundaries.outline() : country);
   outside.rect(bounds[0]-1,bounds[1]-1,bounds[2]-bounds[0]+2,bounds[3]-bounds[1]+2);
   ctx.fillStyle = mapPaper;
   ctx.fill(outside,'evenodd');
@@ -641,6 +673,7 @@ function drawBoundaries(bounds,scale,weights) {
   const autonomy = theme === 'autonomy';
   const figures = statistics[theme];
   const cities = autonomy ? [] : layers[1].filter(region => weight(region).line > 0 && visible(region,bounds));
+  const enclosed = atlasCN ? chinaBoundaries.enclosed() : [];
   const counties = autonomy ? [] : layers[2].filter(region => !region.provinceDirect && countyOpacity(region) > 0 && visible(region,bounds));
   const direct = autonomy ? [] : directCounties.filter(region => region.b && countyOpacity(region) > 0 && visible(region,bounds));
   for (const region of provinces) {
@@ -660,13 +693,20 @@ function drawBoundaries(bounds,scale,weights) {
   if (figures) {
     const local = metricScale(theme,focusedProvince);
     const national = focusedProvince ? metricScale(theme,null) : local;
-    for (const region of !atlasCN && mode === 2 ? counties : [...cities,...direct]) {
+    for (const region of !atlasCN && mode === 2 ? (atlasUS ? counties.slice().reverse() : counties) : [...cities,...direct]) {
       const nation = provinceId(region);
       const alpha = weights.get(nation).cityMetrics*(!atlasCN && region.layer === 2 ? countyOpacity(region) : 1);
       if (!alpha) continue;
       const value = metricValues(region)?.[figures.index];
       ctx.globalAlpha = alpha*.84;
       ctx.fillStyle = metricColor(value,nation === focusedProvince?.id ? local : national);
+      ctx.fill(mapPath(region),'evenodd');
+    }
+  }
+  if (atlasUS && theme === 'admin') {
+    for (const region of counties.slice().reverse()) {
+      ctx.fillStyle = region.id.startsWith('M') ? '#f7efd9' : '#794d3a';
+      ctx.globalAlpha = .22*countyOpacity(region);
       ctx.fill(mapPath(region),'evenodd');
     }
   }
@@ -697,6 +737,22 @@ function drawBoundaries(bounds,scale,weights) {
   strokeRegions(provinces,'#f1e7d0',1.55,.55);
   strokeRegions(provinces,'#5e4934',.92,region => .42+.45*weight(region).color);
   strokeRegions(provinces,'#73432b',1.45,region => weight(region).outline);
+  for (const {region,shape} of enclosed) {
+    if (!visible(shape,bounds)) continue;
+    const active = region === hovered || region === selected;
+    if (theme === 'admin') {
+      ctx.fillStyle = provinceId(region) === focusedProvince.id ? '#d1b88d' : provinceColors[provinceId(region)] || '#a59a7e';
+      ctx.globalAlpha = active ? .94 : .8;
+      ctx.fill(path(shape),'evenodd');
+    }
+    ctx.strokeStyle = '#54463a';
+    ctx.globalAlpha = .9;
+    ctx.lineWidth = (active ? 1.45 : 1)/scale;
+    ctx.stroke(path(shape));
+  }
+  if (atlasCN && zoom <= 1.48 && !focusedProvince) {
+    strokeRegions(provinces.filter(region => chinaBoundaries.sarCodes.includes(region.id)),'#784733',1.05,.9);
+  }
   if (autonomy) {
     for (const region of shownAutonomy()) {
       if (!visible(region,bounds)) continue;
@@ -709,14 +765,16 @@ function drawBoundaries(bounds,scale,weights) {
   }
   strokeRegions(maritime,'#697a78',.75,.76);
   for (const region of new Set([selected,hovered])) {
-    if (region?.layer == null || !region.b || region === focusedProvince || region === focusedCity ||
+    if (region?.layer == null || !region.b || (region.locality && !region.d) || region === focusedProvince || region === focusedCity ||
         (region === selected && !isFocused(region))) continue;
     const autonomyVisible = autonomy && showsAutonomy(region);
     const opacity = autonomyVisible ? 1 : region.layer === 2 ? countyOpacity(region) :
       region.layer === 1 ? weight(region).line : 1;
-    ctx.globalAlpha = .22*opacity;
-    ctx.fillStyle = '#fff1ba';
-    ctx.fill(path(region),'evenodd');
+    if (theme !== 'admin' || !atlasCN || !chinaBoundaries.keepsProvinceFill(region)) {
+      ctx.globalAlpha = .22*opacity;
+      ctx.fillStyle = '#fff1ba';
+      ctx.fill(mapPath(region),'evenodd');
+    }
     strokeRegions([region],'#883d29',1.35,opacity);
   }
   ctx.globalAlpha = 1;
@@ -827,6 +885,7 @@ function drawLabels(bounds,weights,now) {
   const local = metric && usesCityMetrics();
   const shortName = n => n.replace(/壮族自治区|维吾尔自治区|回族自治区|特别行政区|自治区|省$|市$/g,'');
   function addRegionLabel(region) {
+    if (targetLabels.has(region.id)) return;
     const i = region.layer;
     const weight = weights.get(i === 2 ? region.p : region.id);
     let alpha = i === 2 ? childWeight(region,weights) : weight?.label;
@@ -849,12 +908,20 @@ function drawLabels(bounds,weights,now) {
     const direction = sarLabelDirections[region.id] || 0;
     const offset = direction*sarLabelOffset;
     const lift = region.b ? 0 : 12;
-    const [px,py] = screen(region.x,region.y);
+    const anchor = atlasCN ? chinaBoundaries.labelAnchor(region) : undefined;
+    const [px,py] = screen(...(anchor ?? [region.x,region.y]));
     const half = reserveLabel(text,px+offset,py-lift,size);
-    if (half) targetLabels.set(region.id,{region,text,size,offset,lift,half,sx:px+offset,sy:py-lift,
+    if (half) targetLabels.set(region.id,{region,text,size,offset,lift,half,anchor,sx:px+offset,sy:py-lift,
       alpha:alpha*(points && mode===0 ? .56 : 1)});
   }
   const priorityRegion = selected?.layer === 2 || (theme === 'terrain' && selected?.layer != null) ? selected : null;
+  if (atlasCN) for (const {region,shape,x,y} of chinaBoundaries.enclosed()) {
+    if (!visible(shape,bounds)) continue;
+    const [sx,sy] = screen(x,y);
+    const size = 12;
+    const half = reserveLabel(region.n,sx,sy,size);
+    if (half) targetLabels.set(region.id,{region,text:region.n,size,offset:0,lift:0,half,sx,sy,alpha:1,anchor:[x,y],enclosed:true});
+  }
   if (priorityRegion) addRegionLabel(priorityRegion);
   if (theme === 'terrain') drawTerrainLabels(screen,reserveLabel,paintLabel);
   for (const region of directCounties) {
@@ -876,7 +943,7 @@ function drawLabels(bounds,weights,now) {
     const entering = smooth(190,560,elapsed);
     for (const [id,label] of viewTransition.labels) {
       if (!targetLabels.has(id) && leaving > 0) {
-        const [px,sy] = screen(label.region.x,label.region.y);
+        const [px,sy] = screen(...(label.anchor || [label.region.x,label.region.y]));
         displayedLabels.set(id,{...label,sx:px+label.offset,sy:sy-label.lift,alpha:label.alpha*leaving});
       }
     }
@@ -888,12 +955,12 @@ function drawLabels(bounds,weights,now) {
   } else {
     displayedLabels = targetLabels;
   }
-  for (const {region,text,size,alpha,half,sx,sy} of displayedLabels.values()) {
+  for (const {region,text,size,alpha,half,sx,sy,enclosed} of displayedLabels.values()) {
     paintLabel(text,sx,sy,size,'#403728',alpha);
-    if ((sarLabelDirections[region.id] || townshipGroups.has(region.id) || region.town || region.provinceDirect ||
+    if ((enclosed || sarLabelDirections[region.id] || townshipGroups.has(region.id) || region.town || region.provinceDirect || (region.locality && region.d) ||
         (theme === 'autonomy' && showsAutonomy(region))) &&
         targetLabels.has(region.id) && alpha >= .36) {
-      regionLabelHitboxes.push({region,sx,sy,half});
+      regionLabelHitboxes.push({region,sx,sy,half,enclosed});
     }
   }
 }
@@ -932,7 +999,7 @@ function showCoordinates(px,py) {
 }
 function setZoom(next,sx,sy) {
   const [px,py] = world(sx,sy);
-  zoom = clamp(next,.8,95);
+  zoom = clamp(next,.8,maxMapZoom);
   x = sx-px*fit*zoom;
   y = sy-py*fit*zoom;
   hovered = null;
@@ -977,13 +1044,14 @@ function focusRegion(region) {
       layers[2].some(item => item.p === region.id) ? 2 : 0;
     setLevel(level,region);
   } else if (region.layer === 1) {
-    setLevel(2,province,region);
+    if (atlasUS && !usLocalitiesByCounty.get(region.id)?.length) setLevel(1,province);
+    else setLevel(2,province,region);
   } else {
     setLevel(region.provinceDirect ? 1 : 2,province,parent?.layer === 1 ? parent : null);
   }
 }
 function navigateToRegion(region) {
-  if (atlasCN && theme === 'universities' && region.layer === 2 && !region.provinceDirect) setTheme('admin');
+  if ((atlasCN || atlasUS) && theme === 'universities' && region.layer === 2 && !region.provinceDirect) setTheme('admin');
   if (theme === 'universities') universityLayer.focus(region);
   else focusRegion(region);
   select(region);
@@ -994,9 +1062,10 @@ function navigateToRegion(region) {
     fly(20,target.x,target.y);
     return;
   }
-  const [left,top,right,bottom] = target.b;
-  const boxZoom = .66*Math.min(width/Math.max(1,right-left),height/Math.max(1,bottom-top))/fit;
-  fly(clamp(boxZoom,1,60),(left+right)/2,(top+bottom)/2);
+  const [left,top,right,bottom] = (atlasCN ? chinaBoundaries.boundary(target) : target).b;
+  const sar = atlasCN && chinaBoundaries.sarCodes.includes(provinceId(region));
+  const boxZoom = .66*Math.min(width/Math.max(.12,right-left),height/Math.max(.12,bottom-top))/fit;
+  fly(clamp(boxZoom,1,sar ? maxMapZoom : 60),(left+right)/2,(top+bottom)/2);
 }
 function pick(sx,sy) {
   const transport = transportLayers[theme]?.pick(sx,sy);
@@ -1007,8 +1076,8 @@ function pick(sx,sy) {
   }
   const point = poiHitboxes.find(p => Math.hypot(sx-p.sx,sy-p.sy) < 11);
   if (point) return point;
-  const label = regionLabelHitboxes.find(({region,sx:labelX,sy:labelY,half}) =>
-    (!region.provinceDirect || (mode > 0 && isFocused(region))) &&
+  const label = regionLabelHitboxes.find(({region,sx:labelX,sy:labelY,half,enclosed}) =>
+    (enclosed || !region.provinceDirect || (mode > 0 && isFocused(region))) &&
     (theme !== 'autonomy' || region.autonomy == null || showsAutonomy(region)) &&
     Math.abs(sx-labelX) <= half && Math.abs(sy-labelY) <= 10);
   if (label) return label.region;
@@ -1016,8 +1085,12 @@ function pick(sx,sy) {
   ctx.save();
   ctx.resetTransform();
   try {
-    if (!ctx.isPointInPath(country,px,py,'evenodd')) return null;
+    if (!ctx.isPointInPath(atlasCN ? chinaBoundaries.outline() : country,px,py,'evenodd')) return null;
     const contains = region => visible(region,[px,py,px,py]) && ctx.isPointInPath(mapPath(region),px,py,'evenodd');
+    if (atlasCN) {
+      const entry = chinaBoundaries.enclosed().find(({shape}) => contains(shape));
+      if (entry) return entry.region;
+    }
     if (theme === 'autonomy') {
       const match = shownAutonomy().reverse().find(contains);
       if (match) return match;
@@ -1109,7 +1182,17 @@ function select(region) {
       sources.append(link);
     }
   };
-  if (!atlasCN) {
+  if (atlasUS && region.locality) {
+    const people = n => n == null ? ui('暂无数据') : ui('{n} 人',{n:number.format(n)});
+    byId('crumb').textContent = parents.join(' / ')+' · '+ui(region.type);
+    byId('detailText').textContent = [!showOriginal ? sourceName(region) : null,
+      ui(region.populationYear === 2020 ? '{year} 年人口普查' : '{year} 年年中人口',{year:region.populationYear}),
+      (region.total == null ? '' : ui('本县辖区人口')+'　')+people(region.population),
+      region.total == null ? null : ui('完整辖区人口')+'　'+people(region.total),
+      'FIPS　'+region.code].filter(Boolean).join('\n');
+    addSources([[ui('美国人口普查局'),region.populationYear === 2020 ? usSources.hawaiiPopulation : usSources.localPopulation],
+      [ui('行政边界'),usSources.localBoundary]]);
+  } else if (!atlasCN) {
     const [gdp,population] = metricValues(region) ?? [];
     const value = (n,unit) => n == null ? ui('暂无数据') : number.format(n)+' '+ui(unit);
     byId('crumb').textContent = (parents.length ? parents.join(' / ')+' · ' : '')+(ui(region.type) || levelNames[region.layer]);
@@ -1124,7 +1207,23 @@ function select(region) {
       [ui('基准人口'),['06','D976'].includes(region.id) ? frSources.populationMayotte : frSources.population],[ui('行政边界'),frSources.boundary]]);
     else if (atlasJP) addSources([[ui('日本内阁府')+' · GDP',jpSources.gdp],[ui('全国人口普查'),jpSources.population],[ui('行政边界'),jpSources.boundary]]);
     else addSources([[statLabel+' · GDP',atlasUK && region.layer !== 2 ? ukSources.gdpRegional : atlasStatSources.gdp],
-      [statLabel+' · '+ui('年中人口'),atlasStatSources.population],[ui('行政边界'),atlasStatSources.boundary]]);
+      [region.censusPop ? ui('美国人口普查局') : statLabel+' · '+ui('年中人口'),region.censusPop ? usSources.localPopulation : atlasStatSources.population],
+      [ui('行政边界'),atlasUS && region.layer === 1 ? usSources.localBoundary : atlasStatSources.boundary]]);
+    if (atlasUS && region.layer === 1 && !usLocalitiesByCounty.has(region.id)) {
+      byId('detailText').textContent += '\n'+ui(region.id === '11001' || region.type === '独立市' || region.aliases ?
+        '此辖区按县级展示。' : '此辖区未收录下一级市镇。');
+    }
+  } else if (region.management) {
+    byId('detailText').textContent = region.management.description;
+    addSources([['区政府 · 人口区划',region.management.source],
+      ['行政管理与地权',region.management.jurisdictionSource],
+      ['边界 · OpenStreetMap',`https://www.openstreetmap.org/relation/${region.osmRelation}`]]);
+  } else if (region.id === '232718') {
+    byId('detailText').textContent = '位于内蒙古鄂伦春自治旗境内\n地权属内蒙古，行政管理由黑龙江大兴安岭地区负责';
+    addSources([['大兴安岭地区行政公署','https://www.dxal.gov.cn/dxal/c100055/202510/c13_321398.shtml']]);
+  } else if (region.id === '130200' && focusedProvince?.id === '120000') {
+    byId('detailText').textContent = '津冀交界处由河北唐山市管理的地块，包括芦台经济开发区和汉沽管理区。';
+    addSources([['唐山市政务资料','https://tsgjlyd.tangshan.gov.cn/gjlyd/cmrd/20240221/1591787.html']]);
   } else if (region.town) {
     const lines = [region.n.endsWith('办事处') ? '办事处' : region.n.endsWith('街道') ? '街道' : '镇'];
     if (!region.b) lines.push('地图暂缺独立边界');
@@ -1171,15 +1270,17 @@ function select(region) {
   }
   sources.hidden = !sources.childElementCount;
   const districtLevel = districtLevelNames[province?.id];
-  const pickerScope = township ? (region.town ? region.p : region.id) : districtLevel && province.id;
+  const usCounty = atlasUS ? (region.locality ? region.p : region.id) : null;
+  const usUnits = usLocalitiesByCounty.get(usCounty);
+  const pickerScope = usUnits ? usCounty : township ? (region.town ? region.p : region.id) : districtLevel && province.id;
   districtPicker.hidden = !pickerScope;
   if (pickerScope) {
     if (districtPicker.dataset.scope !== pickerScope) {
-      const units = township ? township.units : layers[2].filter(item => item.p === pickerScope);
+      const units = usUnits ? usUnits.slice().sort((a,b) => a.n.localeCompare(b.n,atlasLocale)) : township ? township.units : layers[2].filter(item => item.p === pickerScope);
       districtPicker.dataset.scope = pickerScope;
-      const hint = atlasUK ? ui('选择{area}',{area:ui(districtLevel)}) : township?.label === '乡镇级' ? '选择镇或办事处' : township ? '选择镇街' : '选择区县';
+      const hint = usUnits ? ui('选择市镇等地方单位') : atlasUK ? ui('选择{area}',{area:ui(districtLevel)}) : township?.label === '乡镇级' ? '选择镇或办事处' : township ? '选择镇街' : '选择区县';
       districtPicker.setAttribute('aria-label',hint);
-      districtPicker.replaceChildren(new Option(township || atlasUK ? hint : '选择区县或分区',''),
+      districtPicker.replaceChildren(new Option(usUnits || township || atlasUK ? hint : '选择区县或分区',''),
         ...units.map(item => new Option(item.n,item.id)));
     }
     districtPicker.value = region.layer === 2 ? region.id : '';
@@ -1270,9 +1371,12 @@ canvas.addEventListener('pointerup',event => {
         layers[2].some(county => county.p === region.id) ? 2 : 0;
       setLevel(nextLevel,region);
     }
-    if (region?.layer === 1 && region !== focusedCity) setLevel(2,records.get(region.p),region);
+    const enclosed = atlasCN && chinaBoundaries.enclosed().some(entry => entry.region === region);
+    if (region?.layer === 1 && region !== focusedCity && !enclosed) focusRegion(region);
     if (theme === 'autonomy' && region?.layer === 2 && showsAutonomy(region)) focusRegion(region);
-    if (region?.provinceDirect && focusedCity) setLevel(1,records.get(region.p));
+    if (region?.provinceDirect && focusedCity && !enclosed) {
+      setLevel(1,records.get(region.p));
+    }
     select(region);
   }
 });
@@ -1284,7 +1388,7 @@ canvas.addEventListener('pointerleave',() => {
 });
 function zoomCenter(multiplier) {
   const [px,py] = world(width/2,height/2);
-  fly(clamp(zoom*multiplier,.8,95),px,py);
+  fly(clamp(zoom*multiplier,.8,maxMapZoom),px,py);
 }
 canvas.addEventListener('keydown',event => {
   const delta = {ArrowLeft:[60,0],ArrowRight:[-60,0],ArrowUp:[0,60],ArrowDown:[0,-60]}[event.key];
@@ -1312,10 +1416,16 @@ for (const [desktop,mobile] of [['labels','mobileLabels'],['shade','mobileShade'
   }
 }
 document.querySelector('.dismiss').onclick = () => select(null);
-districtPicker.onchange = () => select(records.get(districtPicker.value) || records.get(districtPicker.dataset.scope));
+districtPicker.onchange = () => {
+  const region = records.get(districtPicker.value) || records.get(districtPicker.dataset.scope);
+  if (region?.locality) navigateToRegion(region);
+  else select(region);
+};
 byId('closer').onclick = () => {
   if (!selected) return;
-  fly(Math.min(zoom*2,95),selected.x,selected.y);
+  const area = atlasCN ? chinaBoundaries.enclosed().find(entry => entry.region === selected) : null;
+  const anchor = atlasCN ? chinaBoundaries.labelAnchor(selected) : undefined;
+  fly(Math.min(zoom*2,maxMapZoom),...(anchor ?? [(area || selected).x,(area || selected).y]));
 };
 new ResizeObserver(resize).observe(canvas);
 updateHint();
@@ -1325,17 +1435,56 @@ async function loadJson(url) {
   if (!response.ok) throw new Error(url+' ('+response.status+')');
   return response.json();
 }
-Promise.all([loadJson(atlasData('admin-boundaries.json')+(atlasCN ? '?v=dissolved-rings' : '')),!atlasCN ? {} : loadJson('data/townships.json').catch(error => {
+function loadUSLocalities(province) {
+  if (!province) return;
+  const state = {error:false};
+  usLocalityLoads.set(province.id,state);
+  loadJson(atlasData('localities/'+province.id+'.json?v=2025')).then(paths => {
+    const regions = localRegionsByNation[2].get(province.id) || [];
+    state.regions = regions.filter(region => Object.hasOwn(paths,region.id));
+    for (const region of state.regions) region.d = paths[region.id];
+    if (mode === 2 && focusedProvince === province) layers[2] = state.regions;
+  }).catch(error => {
+    state.error = true;
+    console.error(error);
+  }).finally(() => {
+    if (mode === 2 && focusedProvince === province) {
+      updateLevel();
+      redraw();
+    }
+  });
+}
+function registerUSLocalities(entries) {
+  // Prefer incorporated places where a village and a township overlap.
+  entries.sort((a,b) => Number(a[0][0] === 'M')-Number(b[0][0] === 'M'));
+  for (const [id,p,zh,original,code,kind,x,y,population,total,populationYear,b] of entries) {
+    const nation = p.slice(0,2);
+    const region = {id,p,nation,zh,original,code,n:nameFor(zh,original),x,y,b,layer:2,locality:true,
+      type:usLocalityTypes[kind],stats:[null,population == null ? null : population/10000],population,total,populationYear};
+    if (!usLocalitiesByCounty.has(p)) usLocalitiesByCounty.set(p,[]);
+    usLocalitiesByCounty.get(p).push(region);
+    if (!localRegionsByNation[2].has(nation)) localRegionsByNation[2].set(nation,[]);
+    localRegionsByNation[2].get(nation).push(region);
+    records.set(id,region);
+  }
+}
+Promise.all([loadJson(atlasData('admin-boundaries.json')+(atlasCN ? '?v=dissolved-rings' : atlasUS ? '?v=localities' : '')),!atlasCN ? {} : loadJson('data/townships.json').catch(error => {
   console.error(error);
   return {};
 }),!atlasCN ? [] : loadJson('data/direct-counties.json').catch(error => {
   console.error(error);
   return [];
-}),!atlasCN ? loadJson(atlasData('statistics.json')) : {}]).then(([data,townships,supplement,stats]) => {
+}),!atlasCN ? loadJson(atlasData('statistics.json')+(atlasUS ? '?v=localities' : '')) : {},atlasUS ? loadJson(atlasData('localities/index.json?v=2025')).catch(error => {
+  console.error(error);
+  return [];
+}) : [],atlasCN ? loadJson('data/china-boundaries/managed-districts.json?v=daq-seams').catch(error => {
+  console.error(error);
+  return null;
+}) : null]).then(([data,townships,supplement,stats,usLocalities,management]) => {
   localStatistics = stats;
   const prefectureParents = new Set(data.city.map(region => region.p));
   const countyIds = new Set(data.county.map(region => region.id));
-  data.county.push(...supplement.filter(region => !countyIds.has(region.id)));
+  data.county.push(...[...supplement,...(management?.districts || [])].filter(region => !countyIds.has(region.id)));
   layers = ['province','city','county'].map((key,layer) => data[key].map(region => ({...region,zh:region.n,n:nameFor(region.n,sourceName(region)),layer})));
   if (!atlasCN) for (const [level,areas] of layers.entries()) {
     for (const area of areas) {
@@ -1364,6 +1513,8 @@ Promise.all([loadJson(atlasData('admin-boundaries.json')+(atlasCN ? '?v=dissolve
   country = new Path2D();
   for (const province of layers[0]) country.addPath(path(province));
   records = new Map([...layers.flat(),...townshipsByRegion].map(region => [region.id,region]));
+  if (atlasCN) chinaBoundaries.initialize(management);
+  if (atlasUS) registerUSLocalities(usLocalities);
   universityLayer.rebuild();
   if (theme === 'autonomy') setLegend(autonomyLegend());
   document.dispatchEvent(new Event('atlas-regions-ready'));

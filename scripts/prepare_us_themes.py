@@ -229,7 +229,8 @@ def main():
     parser.add_argument("aviation_cache",type=Path)
     parser.add_argument("--output",type=Path,default=Path("dist/data/us"))
     args=parser.parse_args()
-    counties={row["id"] for row in json.loads((args.output/"admin-boundaries.json").read_text(encoding="utf-8"))["county"]}
+    admin = json.loads((args.output/"admin-boundaries.json").read_text(encoding="utf-8"))
+    counties = {row["id"] for row in admin["city"] or admin["county"]}
     data={"parks":park_records(args.cache),"roads":roads(args.cache),"railways":railways(args.cache),
           "universities":colleges(args.cache,counties),"airports":airports(args.aviation_cache)}
     assert data["parks"] and data["roads"]["roads"] and data["railways"]["lines"] and data["universities"]["schools"] and data["airports"]["routes"]

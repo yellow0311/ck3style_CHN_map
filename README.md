@@ -116,7 +116,9 @@ git push -u origin main
 
 英国数据存放于 `dist/data/uk/`，来源和覆盖范围见[英国图志手记](dist/notes.html#uk-data)。`scripts/prepare_uk_*.py` 负责整理英国各主题的数据。重建英国铁路、公路或高校数据后，运行 `python3 scripts/localize_uk_names.py` 应用中文名称。
 
-美国数据存放于 `dist/data/us/`，由 `scripts/prepare_us_admin.py`、`scripts/prepare_us_themes.py` 和 `scripts/prepare_us_terrain.py` 生成。重建美国边界、高校、铁路和机场数据后，运行 `python3 scripts/localize_us_names.py` 应用双语名称。数据年份与覆盖说明见[美国图志手记](dist/notes.html#us-data)。
+中国高精度边界存放于 `dist/data/china-boundaries/`，由 `scripts/refine_china_boundaries.py` 匹配现有行政区代码后生成。主图放大时按需加载各省数据，全国总览直接使用港澳的详细轮廓。[边界来源与口径](dist/notes.html#china-boundaries)
+
+美国数据存放于 `dist/data/us/`，由 `scripts/prepare_us_admin.py`、`scripts/prepare_us_localities.py`、`scripts/prepare_us_themes.py` 和 `scripts/prepare_us_terrain.py` 生成。先生成州和县级数据，并用 `python3 scripts/localize_us_names.py` 应用双语名称，再运行 `python3 scripts/prepare_us_localities.py <人口普查数据目录> <GeoNames-US.zip>` 生成市镇索引与分州地图。市镇脚本需要 `pyshp`、`shapely`、`opencc-python-reimplemented` 和 `espeakng-loader`，输入文件名见脚本说明。数据年份与覆盖说明见[美国图志手记](dist/notes.html#us-data)。
 
 法国资料见[法国图志手记](dist/notes.html#fr-data)。制图数据由 `scripts/prepare_fr.py` 和 `scripts/prepare_fr_terrain.py` 生成，静态数据存放于 `dist/data/fr/`。
 

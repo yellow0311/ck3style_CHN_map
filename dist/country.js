@@ -16,8 +16,8 @@ const atlasCountries = {
  us:{
   name:'美国',originalName:'United States',shortName:'US',originalLocale:'en-US',languageName:'English',notes:'us-data',originalNotes:'notes-en.html', west:-125, north:50, lonScale:14, latScale:18,
   viewWidth:895, viewHeight:500, center:[420,223],
-  levels:['州级','','县级'],
-  search:'搜索州、县或 FIPS 编码'
+  levels:['州级','县级','市镇级'],
+  search:'搜索州、县、市镇或 FIPS 编码'
  },
  uk:{
   name:'英国',originalName:'United Kingdom',shortName:'UK',originalLocale:'en-GB',languageName:'English',notes:'uk-data',originalNotes:'notes-en.html', west:-8.8, north:61.1, lonScale:51, latScale:78,
@@ -54,7 +54,10 @@ const ukSources = {
 const usSources = {
   boundary:'https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html',
   gdp:'https://www.bea.gov/data/gdp/gdp-county-metro-and-other-areas',
-  population:'https://www.bea.gov/data/income-saving/personal-income-county-metro-and-other-areas'
+  population:'https://www.bea.gov/data/income-saving/personal-income-county-metro-and-other-areas',
+  localBoundary:'https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.2025.html',
+  localPopulation:'https://www.census.gov/data/tables/time-series/demo/popest/2020s-total-cities-and-towns.html',
+  hawaiiPopulation:'https://www.census.gov/programs-surveys/decennial-census/about/rdo/summary-files.html'
 };
 const jpSources = {
   boundary:'https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N03-2025.html',
