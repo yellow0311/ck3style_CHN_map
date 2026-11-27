@@ -2,20 +2,54 @@ const byId = id => document.getElementById(id);
 const canvas = byId('map');
 const ctx = canvas.getContext('2d');
 const svgIcon = name => '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">' + icons[name] + '</svg>';
+// Colors are assigned using the boundaries each region shares with its neighbors.
 const provinceColors = {
-  E92000001:'#989267',S92000003:'#8f88a5',W92000004:'#77a491',N92000002:'#c29364',
-  '110000':'#898068', '120000':'#927fa7', '130000':'#d0a552', '140000':'#79b8aa',
-  '150000':'#b27499', '210000':'#48918f', '220000':'#d4ad83', '230000':'#7c8b8e',
-  '310000':'#a4aaa7', '320000':'#d48a79', '330000':'#c2bc71', '340000':'#618b72',
-  '350000':'#49758e', '360000':'#d695a3', '370000':'#80a2c1', '410000':'#b75b52',
-  '420000':'#736e9f', '430000':'#b47f46', '440000':'#738953', '450000':'#aa94ba',
-  '460000':'#bc8d8a', '500000':'#70a8ad', '510000':'#a76772', '520000':'#a3b77c',
-  '530000':'#c99660', '540000':'#989fbc', '610000':'#aeb665', '620000':'#6685a9',
-  '630000':'#87a66a', '640000':'#ba926d', '650000':'#c17d6c', '710000':'#a77765',
-  '810000':'#cdb595', '820000':'#679a92'
-};
+  cn: {
+    '110000':'#738953', '120000':'#927fa7', '130000':'#d0a552', '140000':'#79b8aa', '150000':'#ab596f',
+    '210000':'#48918f', '220000':'#d4ad83', '230000':'#7c8b8e', '310000':'#989fbc', '320000':'#d48a79',
+    '330000':'#c2bc71', '340000':'#618b72', '350000':'#49758e', '360000':'#d695a3', '370000':'#80a2c1',
+    '410000':'#b75b52', '420000':'#736e9f', '430000':'#c46f4f', '440000':'#738953', '450000':'#aa94ba',
+    '460000':'#bc8d8a', '500000':'#70a8ad', '510000':'#a76772', '520000':'#738953', '530000':'#c99660',
+    '540000':'#989fbc', '610000':'#738953', '620000':'#6685a9', '630000':'#87a66a', '640000':'#ba926d',
+    '650000':'#c17d6c', '710000':'#a77765', '810000':'#cdb595', '820000':'#8f629d',
+  },
+  fr: {
+    '01':'#cb8773', '02':'#829bab', '03':'#72a087', '04':'#c083a1', '06':'#9a94bd',
+    '11':'#8ab0cd', '24':'#d3a640', '27':'#3e7462', '28':'#ab596f', '32':'#d1b17c',
+    '44':'#684a79', '52':'#aa94ba', '53':'#a2a863', '75':'#4c878c', '76':'#899954',
+    '84':'#80628f', '93':'#c46f4f', '94':'#bd8650',
+  },
+  jp: {
+    '01000':'#9a635a', '02000':'#a2a863', '03000':'#866350', '04000':'#899954', '05000':'#9a94bd',
+    '06000':'#ab596f', '07000':'#8ab0cd', '08000':'#d3a640', '09000':'#684a79', '10000':'#c46f4f',
+    '11000':'#80628f', '12000':'#c46f4f', '13000':'#72a087', '14000':'#80628f', '15000':'#3e7462',
+    '16000':'#d3a640', '17000':'#c083a1', '18000':'#d1b17c', '19000':'#d3a640', '20000':'#829bab',
+    '21000':'#684a79', '22000':'#c46f4f', '23000':'#d1b17c', '24000':'#4c878c', '25000':'#c083a1',
+    '26000':'#684a79', '27000':'#8ab0cd', '28000':'#bd8650', '29000':'#cb8773', '30000':'#684a79',
+    '31000':'#5b77a7', '32000':'#8ab0cd', '33000':'#8ab0cd', '34000':'#bd8650', '35000':'#557173',
+    '36000':'#cb8773', '37000':'#8ab0cd', '38000':'#3e7462', '39000':'#8ab0cd', '40000':'#ab596f',
+    '41000':'#a2a863', '42000':'#5b77a7', '43000':'#72a087', '44000':'#d3a640', '45000':'#866350',
+    '46000':'#d3a640', '47000':'#829bab',
+  },
+  uk: {
+    'E92000001':'#989267', 'N92000002':'#c29364', 'S92000003':'#927fa7', 'W92000004':'#a65170',
+  },
+  us: {
+    '01':'#d1b17c', '02':'#bd8650', '04':'#8ab0cd', '05':'#d1b17c', '06':'#c46f4f',
+    '08':'#8ab0cd', '09':'#8ab0cd', '10':'#5b77a7', '11':'#80628f', '12':'#9a635a',
+    '13':'#829bab', '15':'#bd8650', '16':'#c083a1', '17':'#c46f4f', '18':'#684a79',
+    '19':'#684a79', '20':'#80628f', '21':'#d3a640', '22':'#ab596f', '23':'#a2a863',
+    '24':'#c46f4f', '25':'#cb8773', '26':'#d3a640', '27':'#a2a863', '28':'#4c878c',
+    '29':'#829bab', '30':'#899954', '31':'#d3a640', '32':'#5b77a7', '33':'#866350',
+    '34':'#c083a1', '35':'#d3a640', '36':'#557173', '37':'#d3a640', '38':'#557173',
+    '39':'#72a087', '40':'#c46f4f', '41':'#d1b17c', '42':'#d3a640', '44':'#4c878c',
+    '45':'#3e7462', '46':'#9a94bd', '47':'#684a79', '48':'#3e7462', '49':'#899954',
+    '50':'#8ab0cd', '51':'#72a087', '53':'#866350', '54':'#80628f', '55':'#9a94bd',
+    '56':'#684a79',
+  },
+}[countryCode];
 const levelNames = atlasCountry.levels.map(uiLabel => ui(uiLabel));
-const districtLevelNames = atlasUS || atlasJP ? {} : atlasUK ? {
+const districtLevelNames = atlasUS || atlasJP || atlasFR ? {} : atlasUK ? {
   S92000003:'议会辖区',W92000004:'主要辖区',N92000002:'地方政府区'
 } : {
   '110000':'区级', '120000':'区级', '310000':'区级', '500000':'区县级',
@@ -25,7 +59,7 @@ const sarLabelDirections = {'810000':1,'820000':-1};
 const tooltip = byId('tooltip');
 const number = new Intl.NumberFormat(atlasLocale,{maximumFractionDigits:atlasJP ? 4 : 3});
 const transportLayers = {railway:railwayLayer,airports:airportLayer,roads:roadLayer,...(atlasUS ? {parks:parkLayer} : {})};
-const transportScope = {railway:'主要线路与车站',airports:'运输机场与直飞航线',roads:atlasJP ? '高速公路与主要国道' : atlasUS ? '州际公路与主要美国国道' : atlasUK ? '高速公路与 A 级公路' : '国家高速与普通国道',parks:'国家公园及相连保护区'};
+const transportScope = {railway:'主要线路与车站',airports:'运输机场与直飞航线',roads:atlasJP || atlasFR ? '高速公路与主要国道' : atlasUS ? '州际公路与主要美国国道' : atlasUK ? '高速公路与 A 级公路' : '国家高速与普通国道',parks:'国家公园及相连保护区'};
 const terrainView = new AtlasTerrain(byId('terrainSurface'),redraw);
 let waterFeatures = [];
 let layers = [[],[],[]];
@@ -83,14 +117,14 @@ if (showOriginal) {
   document.querySelector('.brand h1').textContent = 'Shanhe Atlas';
   document.querySelector('.brand .latin').hidden = true;
 }
-if (showOriginal || atlasJP) document.querySelector('.titleplate').append(document.querySelector('.mobile-legend'));
+if (showOriginal || atlasJP || atlasFR) document.querySelector('.titleplate').append(document.querySelector('.mobile-legend'));
 const countryButtons = [];
 for (const code of ['cn',...Object.keys(atlasCountries).filter(code => code !== 'cn').sort()]) {
   const config = atlasCountries[code];
   const link = document.createElement('a');
   link.dataset.country = code;
-  link.textContent = showOriginal && !atlasJP ? config.shortName || config.originalName : ui(config.name);
-  link.title = atlasJP ? ui(config.name) : countryName(config);
+  link.textContent = showOriginal && !atlasJP && !atlasFR ? config.shortName || config.originalName : ui(config.name);
+  link.title = atlasJP || atlasFR ? ui(config.name) : countryName(config);
   if (code === countryCode) link.setAttribute('aria-current','page');
   byId('countrySwitch').append(link);
   countryButtons.push(link);
@@ -109,6 +143,20 @@ if (atlasCountry.originalLocale) {
 if (atlasCountry.notes) document.querySelector('header .notes').href = atlasNotes(atlasCountry.notes);
 if (atlasUK) {
   document.body.classList.add('uk-atlas');
+}
+if (atlasFR) {
+  document.body.classList.add('fr-atlas');
+  const controls = byId('usRegions');
+  controls.hidden = false;
+  const selectRegion = document.createElement('select');
+  selectRegion.setAttribute('aria-label',ui('法国地图区域'));
+  for (const region of frRegions) selectRegion.add(new Option(ui(region.label),region.id));
+  selectRegion.onchange = () => {
+    const {lon,lat,zoom:targetZoom} = frRegions.find(region => region.id === selectRegion.value);
+    reset();
+    fly(targetZoom,...(lon == null ? atlasCountry.center : project(lon,lat)));
+  };
+  controls.append(selectRegion);
 }
 if (atlasUS || atlasJP) {
   document.body.classList.add(atlasUS ? 'us-atlas' : 'jp-atlas');
@@ -140,7 +188,7 @@ for (const [key,[label,english]] of Object.entries(themes)) {
   const button = document.createElement('button');
   button.className = 'theme';
   button.dataset.theme = key;
-  button.innerHTML = svgIcon(key)+'<span><strong>'+ui(label)+'</strong>'+(showOriginal || atlasJP ? '' : '<small>'+english+'</small>')+'</span>';
+  button.innerHTML = svgIcon(key)+'<span><strong>'+ui(label)+'</strong>'+(showOriginal || atlasJP || atlasFR ? '' : '<small>'+english+'</small>')+'</span>';
   button.onclick = () => setTheme(key);
   byId('themes').append(button);
 }
@@ -183,6 +231,7 @@ function restoreLanguageView() {
   if (bookmark.selection) select(records.get(bookmark.selection) || null);
 }
 function cityMetricYear(id,index) {
+  if (atlasFR) return localStatistics[id]?.[index+2] ?? (index === 1 || mode>0 ? 2023 : 2024);
   return atlasJP ? [2023,2025][index] : atlasUS ? 2024 : atlasUK ? [2024,2025][index] : cityStatistics.years?.[id]?.[index] ?? cityStatistics.year;
 }
 const metricValues = region => !atlasCN ? localStatistics[region.id] : region.layer === 0
@@ -199,11 +248,13 @@ function metricScale(key,province) {
   const covered = peers.filter(region => Number.isFinite(metricValues(region)?.[figures.index]));
   const years = [...new Set(covered.map(region => cityMetricYear(region.id,figures.index)))].sort();
   const yearLabel = ui('{year} 年',{year:years.length > 1 ? years.join(showOriginal ? ', ' : '、') : years[0] ?? cityMetricYear('',figures.index)});
-  const scale = {breaks:figures.cityBreaks,colors:figures.colors,covered:covered.length,total:peers.length,yearLabel};
+  const levelBreaks = figures.breaksByLevel?.[mode];
+  const palette = levelBreaks ? figures.levelColors : figures.cityColors ?? figures.colors;
+  const scale = {breaks:levelBreaks ?? figures.cityBreaks,colors:palette,covered:covered.length,total:peers.length,yearLabel};
   localMetricScales.set(cacheKey,scale);
   if (!province) return scale;
   const values = covered.map(region => metricValues(region)[figures.index]).sort((a,b) => a-b);
-  const groups = Math.min(figures.colors.length,new Set(values).size);
+  const groups = Math.min(palette.length,new Set(values).size);
   const limits = new Set();
   for (let i=1; i<groups; i++) {
     const value = values[Math.floor(values.length*i/groups)];
@@ -211,7 +262,7 @@ function metricScale(key,province) {
   }
   const breaks = [...limits];
   const colors = values.length ? Array.from({length:breaks.length+1},(_,i) =>
-    figures.colors[breaks.length ? Math.round(i*(figures.colors.length-1)/breaks.length) : 2]) : [];
+    palette[breaks.length ? Math.round(i*(palette.length-1)/breaks.length) : 2]) : [];
   Object.assign(scale,{breaks,colors,minimum:values[0]});
   return scale;
 }
@@ -226,10 +277,10 @@ function metricLegend(key) {
   const figures = statistics[key];
   const city = usesCityMetrics();
   const scale = city ? metricScale(key,focusedProvince) : figures;
-  const scope = !atlasCN ? (city ? (focusedCity || focusedProvince)?.n || levelNames[mode] : atlasJP ? '47 个都道府县' : atlasUS ? '50 州与哥伦比亚特区' : '英国四个组成国') :
+  const scope = !atlasCN ? (city ? (focusedCity || focusedProvince)?.n || levelNames[mode] : atlasFR ? '18 个大区' : atlasJP ? '47 个都道府县' : atlasUS ? '50 州与哥伦比亚特区' : '英国四个组成国') :
     city ? focusedProvince?.n || '全国地级' : '大陆 31 个省级地区';
   let legend = '<p>'+(atlasJP && key === 'gdp' ? ui('{year} 财年',{year:cityMetricYear('',figures.index)}) : city ? scale.yearLabel : ui('{year} 年',{year:cityMetricYear('',figures.index)}))+' · '+ui(scope)+'<br>'+ui(figures.unit)+
-    ' · '+ui(key === 'gdp' ? '当年价' : atlasJP ? '全国人口普查' : !atlasCN ? '年中常住' : '年末常住')+'</p>';
+    ' · '+ui(key === 'gdp' ? '当年价' : atlasFR ? '基准人口' : atlasJP ? '全国人口普查' : !atlasCN ? '年中常住' : '年末常住')+'</p>';
   legend += scale.colors.map((color,i) => {
     const low = scale.breaks[i-1] ?? scale.minimum;
     const high = scale.breaks[i];
@@ -239,16 +290,23 @@ function metricLegend(key) {
   }).join('') + swatch(ui('暂无同口径数据'),missingMetricColor);
   if (city && scale.total) legend += '<p>'+(focusedProvince ? ui(!atlasCN ? '按当前地区分档' : '按省内数值分档')+' · ' : '')+
     ui('{n} / {total} 有数据',{n:scale.covered,total:scale.total})+'</p>';
-  const statSource = atlasUK && key === 'gdp' && mode < 2 ? ukSources.gdpRegional : atlasStatSources[key];
-  legend += !atlasCN ? '<p><a href="'+statSource+'">'+ui(atlasJP ? key === 'gdp' ? '日本内阁府' : '日本总务省统计局' : atlasUS ? '美国经济分析局（BEA）' : '英国国家统计局（ONS）')+' ↗</a></p>' :
+  const statSource = atlasFR && key === 'gdp' && city ? frSources.gdpDepartment :
+    atlasUK && key === 'gdp' && mode < 2 ? ukSources.gdpRegional : atlasStatSources[key];
+  legend += !atlasCN ? '<p><a href="'+statSource+'">'+ui(atlasFR ? key === 'gdp' && city ? '欧盟统计局' : '法国国家统计与经济研究所' : atlasJP ? key === 'gdp' ? '日本内阁府' : '日本总务省统计局' : atlasUS ? '美国经济分析局（BEA）' : '英国国家统计局（ONS）')+' ↗</a></p>' :
     city ? '<p>点选地区查看数值和来源。</p>' :
     '<p><a href="'+statsSource+'" target="_blank" rel="noopener">《2025 甘肃统计提要》↗</a></p>';
+  if (atlasFR && key === 'gdp' && mode === 2) legend += '<p>'+ui('行政专区暂无同口径 GDP 数据。')+'</p>';
+  if (atlasFR && key === 'gdp' && !city) legend += '<p>'+ui('马约特的大区 GDP 使用 2023 年数据。')+'</p>';
+  if (atlasFR && key === 'gdp' && (!city || focusedProvince?.id === '01')) legend += '<p>'+ui('瓜德罗普 GDP 按来源口径含法属圣马丁。')+'</p>';
+  if (atlasFR && key === 'population' && (!city || focusedProvince?.id === '06')) legend += '<p>'+ui('马约特使用 2026 年人口普查数据。')+'</p>';
   if (atlasJP && key === 'gdp' && city) legend += '<p>'+ui('市区町村 GDP 仅显示日本内阁府同一统计表中公布的城市。')+'</p>';
   return legend;
 }
 function administrativeLegend() {
   const township = townshipGroups.get(focusedCity?.id);
   const local = districtLevelNames[focusedProvince?.id];
+  if (atlasFR) return ['大区边界','省界','行政专区边界'].map((label,i) =>
+    '<div class="legendrow"><i class="line '+['','city','county'][i]+'"></i>'+label+'</div>').join('');
   if (atlasJP) return '<div class="legendrow"><i class="line"></i>都道府县边界</div><div class="legendrow"><i class="line county"></i>市区町村边界</div>';
   if (atlasUS) return '<div class="legendrow"><i class="line"></i>州与联邦特区边界</div><div class="legendrow"><i class="line county"></i>县及同级辖区</div>';
   const labels = atlasUK ? ['组成国边界','英格兰大区边界',ui('{area}边界',{area:ui(local || levelNames[2])})] :
@@ -356,7 +414,8 @@ function setTheme(key) {
       return swatch(label,cssColor(color));
     }).join('')+swatch('水域',cssColor(elevationWater));
     legend += Object.values(terrainNameStyles).map(({label,color}) => swatch(label,color)).join('');
-    legend += '<p>放大查看更多自然地名。</p><p><a href="'+atlasNotes(atlasJP ? 'jp-terrain' : atlasUS ? 'us-terrain' : atlasUK ? 'uk-terrain' : 'terrain-data')+'">地形与水系来源 ↗</a></p>';
+    if (atlasFR) legend += '<p>'+ui('高程覆盖法国本土与科西嘉岛。')+'</p>';
+    legend += '<p>放大查看更多自然地名。</p><p><a href="'+atlasNotes(atlasFR ? 'fr-terrain' : atlasJP ? 'jp-terrain' : atlasUS ? 'us-terrain' : atlasUK ? 'uk-terrain' : 'terrain-data')+'">地形与水系来源 ↗</a></p>';
   } else if (key === 'food') {
     legend = swatch('辛香风味示例','#a94536')+swatch('沿海及江南风味示例','#548465')+swatch('其他地方风味示例','#a37c40')+'<p>点选图标查看代表食物。</p>';
   }
@@ -449,7 +508,7 @@ function updateLevel() {
   byId('level').textContent = ui('{label}视图',{label:levelName});
   const scope = (focusedCity || focusedProvince)?.n || ui('全国');
   if (university) {
-    byId('plateLevel').textContent = scope+' · '+ui(mode || focusedProvince ? (atlasJP ? '按市区町村展示' : atlasUS ? '按县展示' : atlasUK ? '地方辖区统计' : '地级统计') : (atlasJP ? '按都道府县汇总' : atlasUS ? '按州汇总' : atlasUK ? '组成国汇总' : '省级汇总'));
+    byId('plateLevel').textContent = scope+' · '+ui(mode || focusedProvince ? (atlasFR ? '按行政区展示' : atlasJP ? '按市区町村展示' : atlasUS ? '按县展示' : atlasUK ? '地方辖区统计' : '地级统计') : (atlasFR ? '按大区汇总' : atlasJP ? '按都道府县汇总' : atlasUS ? '按州汇总' : atlasUK ? '组成国汇总' : '省级汇总'));
     return;
   }
   if (transportScope[theme]) {
@@ -513,10 +572,7 @@ function visible(region,bounds) {
 }
 function provinceColor(region) {
   const figures = statistics[theme];
-  if (!figures) {
-    const stateColors = ['#ab9873','#838da7','#819e8d','#bc916b','#a08180','#929c69','#769596','#b6a482'];
-    return atlasUS || atlasJP ? stateColors[(+region.id.slice(0,2)*7+Math.floor(+region.id.slice(0,2)/8))%stateColors.length] : provinceColors[region.id];
-  }
+  if (!figures) return provinceColors?.[region.id] ?? '#ab9873';
   const value = metricValues(region)?.[figures.index];
   return metricColor(value,figures);
 }
@@ -528,9 +584,10 @@ function draw(now) {
   const bounds = [-x/scale,-y/scale,(width-x)/scale,(height-y)/scale];
   const geographic = [...unproject(bounds[0],bounds[3]),...unproject(bounds[2],bounds[1])];
   const weights = currentWeights(now);
-  const hasSurface = terrainView.render(geographic,!elevation && byId('shade').checked,elevation);
+  const terrainAvailable = !atlasFR || (geographic[0] < 10 && geographic[2] > -6 && geographic[1] < 52 && geographic[3] > 41);
+  const hasSurface = terrainView.render(geographic,terrainAvailable && !elevation && byId('shade').checked,terrainAvailable && elevation);
   const surfaceStatus = byId('terrainStatus');
-  surfaceStatus.hidden = !elevation || hasSurface || !byId('loading').hidden;
+  surfaceStatus.hidden = !elevation || !terrainAvailable || hasSurface || !byId('loading').hidden;
   if (!surfaceStatus.hidden) surfaceStatus.textContent = ui(terrainView.error ? '高程数据载入失败，请刷新重试。' : '正在载入高程数据…');
   byId('inset').hidden = !maritime.length || zoom > 1.48;
   if (!byId('inset').hidden) drawInset();
@@ -1056,13 +1113,16 @@ function select(region) {
     const [gdp,population] = metricValues(region) ?? [];
     const value = (n,unit) => n == null ? ui('暂无数据') : number.format(n)+' '+ui(unit);
     byId('crumb').textContent = (parents.length ? parents.join(' / ')+' · ' : '')+(ui(region.type) || levelNames[region.layer]);
-    byId('detailText').textContent = [!atlasJP && sourceName(region) !== region.n ? sourceName(region) : null,
+    byId('detailText').textContent = [!atlasJP && !atlasFR && sourceName(region) !== region.n ? sourceName(region) : null,
       ui(atlasJP ? '{year} 财年' : '{year} 年',{year:cityMetricYear(region.id,0)})+' GDP　'+value(gdp,statistics.gdp.unit),
-      ui(atlasJP ? '{year} 年人口普查' : '{year} 年年中人口',{year:cityMetricYear(region.id,1)})+'　'+value(population,'万人'),
+      ui(atlasFR ? '{year} 年基准人口' : atlasJP ? '{year} 年人口普查' : '{year} 年年中人口',{year:cityMetricYear(region.id,1)})+'　'+value(population,'万人'),
       region.statCode ? ui('来源统计沿用调整前区界')+' · '+region.statCode : null,
-      atlasJP ? ui('行政区代码')+'　'+region.id : (atlasUS ? 'FIPS' : 'ONS')+(showOriginal ? ' code · ' : ' 编码　')+region.id].filter(Boolean).join('\n');
+      atlasJP || atlasFR ? ui('行政区代码')+'　'+(region.code || region.id) : (atlasUS ? 'FIPS' : 'ONS')+(showOriginal ? ' code · ' : ' 编码　')+region.id].filter(Boolean).join('\n');
+    if (atlasFR && ['01','D971'].includes(region.id)) byId('detailText').textContent += '\n'+ui('瓜德罗普 GDP 按来源口径含法属圣马丁。');
     const statLabel = atlasUS ? 'BEA' : 'ONS';
-    if (atlasJP) addSources([[ui('日本内阁府')+' · GDP',jpSources.gdp],[ui('全国人口普查'),jpSources.population],[ui('行政边界'),jpSources.boundary]]);
+    if (atlasFR) addSources([[ui(region.layer === 0 ? '法国国家统计与经济研究所' : '欧盟统计局')+' · GDP',region.layer === 0 ? frSources.gdp : frSources.gdpDepartment],
+      [ui('基准人口'),['06','D976'].includes(region.id) ? frSources.populationMayotte : frSources.population],[ui('行政边界'),frSources.boundary]]);
+    else if (atlasJP) addSources([[ui('日本内阁府')+' · GDP',jpSources.gdp],[ui('全国人口普查'),jpSources.population],[ui('行政边界'),jpSources.boundary]]);
     else addSources([[statLabel+' · GDP',atlasUK && region.layer !== 2 ? ukSources.gdpRegional : atlasStatSources.gdp],
       [statLabel+' · '+ui('年中人口'),atlasStatSources.population],[ui('行政边界'),atlasStatSources.boundary]]);
   } else if (region.town) {
@@ -1183,6 +1243,11 @@ canvas.addEventListener('pointermove',event => {
   tooltip.hidden = !match;
   if (match) {
     tooltip.textContent = (theme === 'universities' && universityLayer.pick(...point)?.school?.name) || match.n;
+    const figures = statistics[theme];
+    if (figures?.breaksByLevel?.[match.layer] || (atlasFR && theme === 'gdp' && match.layer === 1)) {
+      const value = metricValues(match)?.[figures.index];
+      if (Number.isFinite(value)) tooltip.textContent += ' · '+number.format(value)+' '+ui(figures.unit);
+    }
     tooltip.style.left = Math.min(point[0]+14,width-tooltip.offsetWidth-4)+'px';
     tooltip.style.top = Math.min(point[1]+16,height-tooltip.offsetHeight-4)+'px';
   }
@@ -1260,7 +1325,7 @@ async function loadJson(url) {
   if (!response.ok) throw new Error(url+' ('+response.status+')');
   return response.json();
 }
-Promise.all([loadJson(atlasData('admin-boundaries.json')),!atlasCN ? {} : loadJson('data/townships.json').catch(error => {
+Promise.all([loadJson(atlasData('admin-boundaries.json')+(atlasCN ? '?v=dissolved-rings' : '')),!atlasCN ? {} : loadJson('data/townships.json').catch(error => {
   console.error(error);
   return {};
 }),!atlasCN ? [] : loadJson('data/direct-counties.json').catch(error => {

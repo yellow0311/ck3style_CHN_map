@@ -1,5 +1,5 @@
 const airportLayer = (() => {
-  const classes = atlasUS || atlasJP ? {
+  const classes = atlasUS || atlasJP || atlasFR ? {
     hub:['大型机场','#8e392f',7.8],
     major:['中型机场','#45655a',6.5],
     regional:['小型机场','#4a647b',5.6],
@@ -29,9 +29,9 @@ const airportLayer = (() => {
       '<label><input type="checkbox" data-airport-grade="'+key+'" '+(enabled.has(key) ? 'checked' : '')+
       '><i class="swatch" style="background:'+color+'"></i>'+name+'</label>').join('');
     const status = failed ? '机场数据载入失败' : data ? ui(atlasJP ? '{n} 座机场 · 国内 2025 财年 · 国际 2026 冬季' : atlasUK ? '{n} 座机场 · {date} 年统计' : '{n} 座机场 · 航点快照 {date}',{n:airports.length,date:data.date}) : '正在载入机场…';
-    return '<div class="theme-filters" role="group" aria-label="'+(atlasUS || atlasJP ? '机场类别' : atlasUK ? '航站楼客流' : '飞行区等级')+'">'+filters+'</div>'+
+    return '<div class="theme-filters" role="group" aria-label="'+(atlasUS || atlasJP || atlasFR ? '机场类别' : atlasUK ? '航站楼客流' : '飞行区等级')+'">'+filters+'</div>'+
       '<p>'+status+'</p><p>点选机场查看已收录的直飞航线。</p>'+
-      '<p><a href="'+atlasNotes(atlasJP ? 'jp-aviation' : atlasUS ? 'us-aviation' : atlasUK ? 'uk-aviation' : 'airport-data')+'">机场与航线来源 ↗</a></p>';
+      '<p><a href="'+atlasNotes(atlasFR ? 'fr-aviation' : atlasJP ? 'jp-aviation' : atlasUS ? 'us-aviation' : atlasUK ? 'uk-aviation' : 'airport-data')+'">机场与航线来源 ↗</a></p>';
   }
   function load() {
     if (data || pending) return;
@@ -134,7 +134,7 @@ const airportLayer = (() => {
     byId('detailText').textContent = airport.id+' · '+(codes.length ? ui('{n} 个图内直飞目的地',{n:local.length})+
       (foreign.length ? ' · '+ui(atlasJP ? '{n} 个图外直飞城市' : !atlasCN ? '{n} 个图外目的地' : '{n} 个境外目的地',{n:foreign.length}) : '') : ui('暂无已收录的直飞数据'))+
       (atlasUK && airport.passengers != null ? '\n'+ui('{year} 年航站楼旅客 {n} 人次',{year:data.date,n:number.format(airport.passengers)}) : '')+
-      (!atlasJP && airport.en && airport.en !== airport.n ? '\n'+airport.en : '');
+      (!atlasJP && !atlasFR && airport.en && airport.en !== airport.n ? '\n'+airport.en : '');
     byId('closer').hidden = zoom >= 70;
     const box = byId('universityDetail');
     const list = document.createElement('ul');
@@ -146,13 +146,13 @@ const airportLayer = (() => {
         const button = document.createElement('button');
         button.type = 'button';
         button.textContent = target.n+' · '+code;
-        if (!atlasJP && target.en) button.title = target.en;
+        if (!atlasJP && !atlasFR && target.en) button.title = target.en;
         button.onclick = () => select(target);
         item.append(button);
       } else {
         const name = nameFor(data.foreign[code],data.foreignEn?.[code]);
         item.textContent = /^[A-Z]{3}$/.test(code) ? (name || code)+' · '+code : name;
-        if (!atlasJP && data.foreignEn?.[code]) item.title = data.foreignEn[code];
+        if (!atlasJP && !atlasFR && data.foreignEn?.[code]) item.title = data.foreignEn[code];
       }
       list.append(item);
     }
@@ -161,7 +161,7 @@ const airportLayer = (() => {
       box.hidden = false;
     }
     const source = document.createElement('a');
-    source.href = data.sources[airport.id] || atlasNotes(atlasJP ? 'jp-aviation' : atlasUS ? 'us-aviation' : atlasUK ? 'uk-aviation' : 'airport-data');
+    source.href = data.sources[airport.id] || atlasNotes(atlasFR ? 'fr-aviation' : atlasJP ? 'jp-aviation' : atlasUS ? 'us-aviation' : atlasUK ? 'uk-aviation' : 'airport-data');
     source.textContent = ui(data.sources[airport.id] ? '航线资料 ↗' : '数据范围 ↗');
     byId('detailSources').replaceChildren(source);
     byId('detailSources').hidden = false;
@@ -171,8 +171,8 @@ const airportLayer = (() => {
 
 const roadLayer = (() => {
   const styles = {
-    expressway:[atlasJP ? '高速公路' : atlasUS ? '州际公路（I）' : atlasUK ? '高速公路（M）' : '国家高速','#a04a34',1.7],
-    national:[atlasJP ? '主要国道' : atlasUS ? '主要美国国道（US）' : atlasUK ? '主要 A 级公路' : '普通国道','#9a783e',1.2]
+    expressway:[atlasJP || atlasFR ? '高速公路' : atlasUS ? '州际公路（I）' : atlasUK ? '高速公路（M）' : '国家高速','#a04a34',1.7],
+    national:[atlasJP || atlasFR ? '主要国道' : atlasUS ? '主要美国国道（US）' : atlasUK ? '主要 A 级公路' : '普通国道','#9a783e',1.2]
   };
   const enabled = new Set(Object.keys(styles));
   let roads, pending, failed = false;
@@ -182,7 +182,7 @@ const roadLayer = (() => {
       '<label class="legendrow"><input type="checkbox" data-road-kind="'+kind+'" '+(enabled.has(kind) ? 'checked' : '')+
       '><i class="rail-sample" style="color:'+color+'"></i>'+label+'</label>').join('')+
       '<p>'+(failed ? '公路数据载入失败' : roads ? ui('{n} 条收录线路',{n:roads.length}) : '正在载入公路…')+'</p>'+
-      '<p>放大可查看区域线路。点选道路查看编号。</p><p><a href="'+atlasNotes(atlasJP ? 'jp-transport' : atlasUS ? 'us-transport' : atlasUK ? 'uk-transport' : 'road-data')+'">公路数据来源 ↗</a></p>';
+      '<p>放大可查看区域线路。点选道路查看编号。</p><p><a href="'+atlasNotes(atlasFR ? 'fr-transport' : atlasJP ? 'jp-transport' : atlasUS ? 'us-transport' : atlasUK ? 'uk-transport' : 'road-data')+'">公路数据来源 ↗</a></p>';
   }
   function load() {
     if (roads || pending) return;
@@ -204,7 +204,7 @@ const roadLayer = (() => {
   }
   function shown(road) {
     return enabled.has(road.kind) && (zoom >= 1.45 || road === selected ||
-      (atlasJP ? road.kind === 'expressway' || /^R[1-9]\d?$/.test(road.id) : atlasUS ? road.kind === 'expressway' || road.id.length <= 5 : atlasUK ? road.kind === 'expressway' || road.id.length <= 3 : road.kind === 'national' || road.id.length < 5));
+      (atlasFR ? road.kind === 'expressway' || road.id.length <= 3 : atlasJP ? road.kind === 'expressway' || /^R[1-9]\d?$/.test(road.id) : atlasUS ? road.kind === 'expressway' || road.id.length <= 5 : atlasUK ? road.kind === 'expressway' || road.id.length <= 3 : road.kind === 'national' || road.id.length < 5));
   }
   function filter(event) {
     const kind = event.target.dataset.roadKind;
@@ -251,7 +251,7 @@ const roadLayer = (() => {
     byId('detailText').textContent = atlasJP ? '' : road.id;
     byId('closer').hidden = true;
     const source = document.createElement('a');
-    source.href = atlasNotes(atlasJP ? 'jp-transport' : atlasUS ? 'us-transport' : atlasUK ? 'uk-transport' : 'road-data');
+    source.href = atlasNotes(atlasFR ? 'fr-transport' : atlasJP ? 'jp-transport' : atlasUS ? 'us-transport' : atlasUK ? 'uk-transport' : 'road-data');
     source.textContent = ui('公路数据来源 ↗');
     byId('detailSources').replaceChildren(source);
     byId('detailSources').hidden = false;

@@ -58,11 +58,11 @@ def ring_edges(ring):
     return zip(ring, chain(ring[1:], ring[:1]))
 
 
-def outer_rings(children):
+def outer_rings(rings, *, require_shared_edge=False):
     """Cancel matching internal edges and join the remaining edges into closed rings."""
-    edges = Counter(tuple(sorted((a, b))) for child in children
-                    for ring in projected_rings(child["geometry"]) for a, b in ring_edges(ring) if a != b)
-    if any(count > 2 for count in edges.values()):
+    edges = Counter(tuple(sorted((a, b))) for ring in rings for a, b in ring_edges(ring) if a != b)
+    counts = set(edges.values())
+    if not counts <= {1, 2} or (require_shared_edge and 2 not in counts):
         return []
     neighbors = defaultdict(list)
     for (a, b), count in edges.items():
@@ -87,7 +87,12 @@ def outer_rings(children):
 def convert(f, *, compact=True, children=()):
     props = f["properties"]
     rings = list(projected_rings(f["geometry"]))
-    detail = outer_rings(children) if children and len(children) == props.get("childrenNum") else []
+    # Some multipart features contain two adjoining pieces of the same region.
+    if f["geometry"]["type"] == "MultiPolygon" and len(rings) > 1:
+        rings = outer_rings(rings, require_shared_edge=True) or rings
+    detail = []
+    if children and len(children) == props.get("childrenNum"):
+        detail = outer_rings(chain.from_iterable(projected_rings(child["geometry"]) for child in children))
     xs, ys = zip(*chain.from_iterable(rings+detail))
     bounds = [value / 1000 for value in (min(xs), min(ys), max(xs), max(ys))]
     x, y = xy(props.get("centroid") or props.get("center") or [105, 15])

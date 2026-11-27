@@ -75,7 +75,19 @@
 <h3 id="jp-aviation">机场与直飞航点</h3>
 <p>地图收录 83 座机场，81 座有航点资料。国内连线对应 2025 财年国内定期客运实绩。国际部分使用国土交通省 2026 年冬季直飞班表，按班表所列城市显示 104 个航点。国际计划与实际执飞可能随时间调整，机场规模按坐标目录分类。 <a href="https://airportmiles.com/sources">国内航线与机场坐标</a> · <a href="https://www.mlit.go.jp/koku/koku_tk1_000013.html">日本国土交通省国际航班资料</a></p>
 <p>简体中文模式优先采用通行译名，较少见的假名名称按读音转写。可切换日语核对来源名称。</p>
+<h2 id="fr-data">法国图集的数据口径</h2>
+<p>行政图包含 18 个大区、101 个省和 333 个行政专区，含瓜德罗普、马提尼克、法属圭亚那、留尼汪与马约特五个海外大区。行政专区由市镇边界按法国国家统计与经济研究所的行政关系合并，马约特显示到省级。地图所列行政专区是省以下的国家行政分区。 <a href="https://www.data.gouv.fr/datasets/contours-administratifs">法国行政边界</a> · <a href="https://www.insee.fr/fr/statistiques/8680726">行政关系与基准人口</a></p>
+<p>人口采用 2023 年基准人口，马约特采用 2026 年普查。大区现价 GDP 采用法国国家统计与经济研究所的 2024 年数据，马约特采用 2023 年数据。省级 GDP 采用欧盟统计局 2023 年 NUTS 3 数据，行政专区显示人口。瓜德罗普的 GDP 按来源口径含法属圣马丁。GDP 单位为亿欧元，人口单位为万人。 <a href="https://www.insee.fr/fr/statistiques/8391986">法国大区 GDP</a> · <a href="https://ec.europa.eu/eurostat/databrowser/view/nama_10r_3gdp/default/table">欧盟统计局 NUTS 3 GDP</a> · <a href="https://www.insee.fr/fr/statistiques/9021428">马约特人口普查</a></p>
+<h3 id="fr-terrain">地形与自然地名</h3>
+<p>法国本土与科西嘉岛采用 Mapzen 高程格网和 Natural Earth 水系。地图标注勃朗峰、中央高原、比利牛斯山脉、塞纳河、卢瓦尔河、罗讷河等自然地名，也标注部分海外河流与火山名称。 <a href="https://registry.opendata.aws/terrain-tiles/">Mapzen 高程</a> · <a href="https://www.naturalearthdata.com/downloads/10m-physical-vectors/">Natural Earth 水系</a></p>
+<h3 id="fr-universities">高校分布</h3>
+<p>收录法国高教部门主要院校名录中可定位至地图范围的 239 所机构，以公开坐标定位，可按公立、私立和工程师学院筛选。 <a href="https://data.enseignementsup-recherche.gouv.fr/explore/dataset/fr-esr-principaux-etablissements-enseignement-superieur/">法国主要高等教育机构名录</a></p>
+<h3 id="fr-transport">铁路与公路</h3>
+<p>铁路使用 SNCF Réseau 的运营线路与车站，单列高速铁路，线路归组依据来源的线路编号。公路采用法国国家公路网 2025 年资料，包含带编号的高速公路和国道。 <a href="https://ressources.data.sncf.com/explore/dataset/formes-des-lignes-du-rfn/">SNCF 铁路几何</a> · <a href="https://ressources.data.sncf.com/explore/dataset/lignes-lgv-et-par-ecartement/">SNCF 高速铁路分类</a> · <a href="https://www.data.gouv.fr/datasets/nature-des-routes-du-reseau-routier-national">法国国家公路网</a></p>
+<h3 id="fr-aviation">机场与直飞航点</h3>
+<p>地图收录 61 座机场，其中 41 座有客运航点资料。航线来自 AirportMiles 汇总的欧盟统计局等客运来源，各来源统计期可能不同。部分航点在地图外，列于机场详情。 <a href="https://airportmiles.com/sources">机场和航点来源</a></p>
+<p>中文模式优先采用通行译名，较少见的名称采用法语读音转写。可切换法语核对来源名称。 <a href="https://www.geonames.org/export/">GeoNames 地名库</a></p>
 </main><script>
 const country = new URLSearchParams(location.search).get("country");
-if (["jp","uk","us"].includes(country)) document.getElementById("atlasBack").href = "./?country="+country+"&lang=zh";
+if (["fr","jp","uk","us"].includes(country)) document.getElementById("atlasBack").href = "./?country="+country+"&lang=zh";
 </script></body></html>

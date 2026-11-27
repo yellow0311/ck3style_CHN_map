@@ -4,7 +4,7 @@
   const status = byId('placeSearchStatus');
   const form = input.form;
   const collator = new Intl.Collator(atlasLocale);
-  const normalize = text => text.normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');
+  const normalize = text => text.normalize(atlasFR ? 'NFKD' : 'NFKC').toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');
   const shortNames = {
     '150000':'内蒙古', '450000':'广西', '540000':'西藏', '640000':'宁夏', '650000':'新疆',
     '810000':'香港', '820000':'澳门'
@@ -57,7 +57,7 @@
     candidates = index.flatMap(entry => {
       const {region,name,alias,original,paths} = entry;
       let rank;
-      if (region.id.toLowerCase() === query || name === query || original === query) rank = 0;
+      if (region.id.toLowerCase() === query || region.code?.toLowerCase() === query || name === query || original === query) rank = 0;
       else if (alias === query) rank = 1;
       else if (name.startsWith(query) || original.startsWith(query)) rank = 2;
       else if (name.includes(query) || original.includes(query) || region.id.toLowerCase().startsWith(query)) rank = 3;

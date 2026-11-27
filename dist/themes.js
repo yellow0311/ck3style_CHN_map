@@ -26,15 +26,15 @@ const themes = {
   terrain:['山川地势','TERRAIN',nationalTitle('海拔地形图')],
   ...(atlasCN ? {food:chinaOnlyThemes.food} : {}),
   gdp:['经济总量','GDP','地区生产总值'],
-  population:['常住人口','POPULATION',atlasCN ? '年末常住人口' : atlasJP ? '日本人口普查' : '年中人口估计'],
-  ...(atlasJP ? {} : atlasUS ? {parks:['国家公园','NATIONAL PARKS','美国国家公园']} :
+  population:['常住人口','POPULATION',atlasCN ? '年末常住人口' : atlasJP ? '日本人口普查' : atlasFR ? '法国基准人口' : '年中人口估计'],
+  ...(atlasJP || atlasFR ? {} : atlasUS ? {parks:['国家公园','NATIONAL PARKS','美国国家公园']} :
     {autonomy:atlasUK ? ['权力下放','DEVOLUTION','英国组成国与权力下放'] : ['民族自治','AUTONOMY','民族自治地方分布']}),
   universities:['大学分布','UNIVERSITIES',nationalTitle('高校分布')],
   railway:['铁路网络','RAILWAY',nationalTitle('主要铁路网')],
   airports:['民航机场','AVIATION',nationalTitle('民航机场与航线')],
   roads:['公路网络','HIGHWAYS',nationalTitle('主要公路网')]
 };
-const autonomyCategories = atlasJP ? [] : atlasUK ? [
+const autonomyCategories = atlasJP || atlasFR ? [] : atlasUK ? [
   {name:'苏格兰议会',layer:0,suffix:/^苏格兰$/,color:'#547b6c'},
   {name:'威尔士议会',layer:0,suffix:/^威尔士$/,color:'#ad724e'},
   {name:'北爱尔兰议会',layer:0,suffix:/^北爱尔兰$/,color:'#72618e'},
@@ -52,7 +52,43 @@ const terrainNameStyles = {
 };
 // [类别, 名称（外国图层为 [中文, 原文]）, 最小缩放倍数, [经度, 纬度], ...备选标注位置]。
 // 水系标注参考 Natural Earth 10m 线面数据，跨区域江河可在不同河段标注。
-const terrainNames = atlasJP ? [
+const terrainNames = atlasFR ? [
+  ['land',['阿尔卑斯山脉','Alpes'],1,[6.58,45.04]],
+  ['land',['勃朗峰','Mont Blanc'],1.65,[6.865,45.832]],
+  ['land',['比利牛斯山脉','Pyrénées'],1,[.78,42.78],[-.47,42.9]],
+  ['land',['中央高原','Massif central'],1,[2.88,45.13]],
+  ['land',['孚日山脉','Vosges'],1.65,[7.06,48.07]],
+  ['land',['汝拉山脉','Jura'],1.65,[5.88,46.47]],
+  ['land',['阿摩里卡丘陵','Massif armoricain'],2.7,[-2.78,48.13]],
+  ['land',['勒皮德多姆山','Puy de Dôme'],2.7,[2.965,45.772]],
+  ['land',['辛托山','Monte Cinto'],2.7,[8.944,42.38]],
+  ['land',['苏弗里耶尔火山','La Soufrière'],2.7,[-61.665,16.044]],
+  ['land',['培雷火山','Montagne Pelée'],2.7,[-61.166,14.810]],
+  ['land',['富尔奈斯火山','Piton de la Fournaise'],2.7,[55.708,-21.245]],
+  ['land',['内日峰','Piton des Neiges'],2.7,[55.481,-21.100]],
+  ['river',['塞纳河','Seine'],1,[2.05,49.10],[3.95,48.48]],
+  ['river',['卢瓦尔河','Loire'],1,[.25,47.32],[3.16,46.85],[-.59,47.40]],
+  ['river',['罗讷河','Rhône'],1,[4.79,44.59]],
+  ['river',['加龙河','Garonne'],1,[.42,44.34],[1.39,43.77]],
+  ['river',['莱茵河','Rhin'],1.65,[7.74,48.45]],
+  ['river',['默兹河','Meuse'],1.65,[5.22,48.81]],
+  ['river',['多尔多涅河','Dordogne'],1.65,[.40,44.87]],
+  ['river',['索恩河','Saône'],1.65,[4.95,46.54]],
+  ['river',['阿列河','Allier'],2.7,[3.27,46.07]],
+  ['river',['马恩河','Marne'],2.7,[3.95,49.04]],
+  ['river',['阿杜尔河','Adour'],2.7,[-.83,43.53]],
+  ['river',['塔恩河','Tarn'],2.7,[2.17,43.94]],
+  ['river',['迪朗斯河','Durance'],2.7,[5.86,43.74]],
+  ['river',['洛特河','Lot'],2.7,[.88,44.40]],
+  ['river',['伊泽尔河','Isère'],2.7,[5.10,45.13]],
+  ['river',['马罗尼河','Maroni'],2.7,[-54.28,4.60]],
+  ['river',['奥亚波克河','Oyapock'],2.7,[-52.31,3.65]],
+  ['lake',['日内瓦湖','Léman'],2.7,[6.38,46.41]],
+  ['lake',['安纳西湖','Lac d’Annecy'],2.7,[6.19,45.85]],
+  ['lake',['布尔歇湖','Lac du Bourget'],2.7,[5.89,45.75]],
+  ['lake',['德尔湖','Lac du Der'],2.7,[4.75,48.59]],
+  ['lake',['塞尔蓬松湖','Lac de Serre-Ponçon'],2.7,[6.36,44.52]]
+] : atlasJP ? [
   ['land',['日高山脉','日高山脈'],1,[142.85,42.85]],
   ['land',['大雪山','大雪山'],1.65,[142.85,43.66]],
   ['land',['知床半岛','知床半島'],1.65,[145.15,44.14]],
@@ -261,7 +297,27 @@ const indicators = {
   63:[3951,593],64:[5503,729],65:[20534,2623]
 };
 const statistics = {
-  gdp:{index:0,unit:atlasJP ? '亿日元' : atlasUS ? '亿美元' : atlasUK ? '亿英镑' : '亿元',breaks:atlasJP ? [50000,100000,200000,500000] : atlasUS ? [1500,3500,7000,12000] : atlasUK ? [350,750,1500,4000] : [10000,30000,60000,100000],cityBreaks:atlasUS ? [10,40,125,600] : atlasUK ? [20,50,100,400] : [1000,3000,6000,12000],colors:['#efe0ac','#deba83','#c48a5d','#a35d43','#763d35']},
-  population:{index:1,unit:'万人',breaks:atlasJP ? [100,200,400,800] : atlasUS ? [200,500,1000,2000] : atlasUK ? [200,400,550,1000] : [1000,3000,6000,10000],cityBreaks:atlasUS ? [3,10,30,100] : atlasUK ? [10,20,35,80] : [100,300,600,1000],colors:['#e1e2bc','#bbc7a5','#91ac8d','#638d7c','#386559']}
+  gdp:{
+    index:0,
+    unit:atlasFR ? '亿欧元' : atlasJP ? '亿日元' : atlasUS ? '亿美元' : atlasUK ? '亿英镑' : '亿元',
+    breaks:atlasFR ? [700,1200,2200,4000] : atlasJP ? [50000,100000,200000,500000] :
+      atlasUS ? [1500,3500,7000,12000] : atlasUK ? [350,750,1500,4000] : [10000,30000,60000,100000],
+    cityBreaks:atlasFR ? [75,150,300,600,1000] : atlasUS ? [10,40,125,600] :
+      atlasUK ? [20,50,100,400] : [1000,3000,6000,12000],
+    cityColors:atlasFR ? ['#f4e7b6','#e5c581','#d59a56','#bb6d40','#98482e','#6d2e27'] : null,
+    colors:['#efe0ac','#deba83','#c48a5d','#a35d43','#763d35']
+  },
+  population:{
+    index:1,
+    unit:'万人',
+    breaks:atlasFR ? [70,200,450,750] : atlasJP ? [100,200,400,800] :
+      atlasUS ? [200,500,1000,2000] : atlasUK ? [200,400,550,1000] : [1000,3000,6000,10000],
+    cityBreaks:[100,300,600,1000],
+    breaksByLevel:atlasFR ? {1:[25,40,60,90,130],2:[5,8,12,20,40]} :
+      atlasUK ? {1:[450,550,600,700,850],2:[8,12,17,25,40]} :
+        atlasUS ? {2:[1,2.5,5,12,35]} : {},
+    levelColors:['#efedbc','#cddc9e','#9dbe82','#6c9c6b','#3f7653','#214f3d'],
+    colors:['#e1e2bc','#bbc7a5','#91ac8d','#638d7c','#386559']
+  }
 };
 const statsSource = 'https://tjj.gansu.gov.cn/tjj/c117468/202505/174143566/files/4db368f09fac4efb95b5d73aa316e1bf.pdf';

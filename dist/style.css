@@ -112,3 +112,26 @@ aside{scrollbar-width:thin;scrollbar-color:#756c52 #27342e}
   .country-switch a{padding-inline:.25rem}
   header{gap:5px}
 }
+
+.fr-atlas{grid-template-columns:minmax(0,1fr)}
+.fr-atlas .sidetop .eyebrow,.fr-atlas .titleplate>div:first-child{display:none}
+.fr-atlas .region-switch select{max-width:100%;background:#eee5ce;border:1px solid #9d8c68;border-radius:3px;color:#51442b;font:inherit;font-size:.75rem;padding:4px 6px}
+@media(max-width:700px){
+  .fr-atlas .mobile-legend{position:relative;top:auto;left:auto;width:fit-content;margin-top:8px;text-shadow:none;pointer-events:auto}
+  .fr-atlas .mobile-legend[open]{max-height:min(36vh,260px);overflow:auto}
+}
+@media(max-width:385px){
+  .country-switch a{padding-inline:.15rem;font-size:.69rem}
+  header{gap:4px;padding-inline:5px}
+  .atlas-search{min-width:0}
+}
+@media(max-width:490px){
+  body.fr-atlas:has(#atlasLanguage:not([hidden])){grid-template-rows:104px 1fr 25px}
+  body.fr-atlas:has(#atlasLanguage:not([hidden])) header{grid-template-columns:minmax(0,1fr) auto auto;grid-template-rows:auto auto auto}
+  body.fr-atlas:has(#atlasLanguage:not([hidden])) #countrySwitch{grid-column:1 / 4;grid-row:2;justify-self:start}
+  body.fr-atlas:has(#atlasLanguage:not([hidden])) #atlasLanguage{grid-column:2;grid-row:1}
+  body.fr-atlas:has(#atlasLanguage:not([hidden])) .notes{grid-column:3;grid-row:1}
+  body.fr-atlas:has(#atlasLanguage:not([hidden])) .atlas-search{grid-column:1 / 4;grid-row:3;min-width:0}
+  .fr-atlas.original-language footer{justify-content:center}
+  .fr-atlas.original-language footer>div:first-child,.fr-atlas.original-language #coords{display:none}
+}
