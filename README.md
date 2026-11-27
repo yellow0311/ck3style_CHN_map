@@ -2,7 +2,7 @@
 
 受《十字军之王 III》（CK3）地图模式启发的交互地理图集。顶部可切换中国、法国、日本、英国和美国，使用各国的行政区划、地形、GDP、人口、高校和交通数据。中国另有人文地理、饮食风物和民族自治图层，英国设有权力下放专题，美国设有国家公园专题。
 
-github静态托管网页：https://yellow0311.github.io/ck3style_CHN_map/
+github静态托管网站：https://yellow0311.github.io/ck3style_country_map/
 
 [更新日志](CHANGELOG.md)
 
