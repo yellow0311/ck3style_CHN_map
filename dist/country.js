@@ -1,4 +1,11 @@
 const atlasCountries = {
+ jp:{
+  name:'日本',originalName:'日本',shortName:'Japan',originalLocale:'ja-JP',languageName:'日本語',
+  notes:'jp-data',originalNotes:'notes-ja.html', west:122,north:46,lonScale:30,latScale:38,
+  viewWidth:755,viewHeight:855,center:[368,431],
+  levels:['都道府县','','市区町村'],
+  search:'搜索都道府县、市区町村或行政区代码'
+ },
  us:{
   name:'美国',originalName:'United States',shortName:'US',originalLocale:'en-US',languageName:'English',notes:'us-data',originalNotes:'notes-en.html', west:-125, north:50, lonScale:14, latScale:18,
   viewWidth:895, viewHeight:500, center:[420,223],
@@ -23,6 +30,7 @@ const countryCode = Object.hasOwn(atlasCountries,countryParam) ? countryParam : 
 const atlasCountry = atlasCountries[countryCode];
 const atlasUK = countryCode === 'uk';
 const atlasUS = countryCode === 'us';
+const atlasJP = countryCode === 'jp';
 const atlasCN = countryCode === 'cn';
 const atlasData = file => 'data/'+(atlasCN ? '' : countryCode+'/')+file;
 const project = (lon,lat) => [((atlasUS && lon > 0 ? lon-360 : lon)-atlasCountry.west)*atlasCountry.lonScale,(atlasCountry.north-lat)*atlasCountry.latScale];
@@ -40,7 +48,14 @@ const usSources = {
   gdp:'https://www.bea.gov/data/gdp/gdp-county-metro-and-other-areas',
   population:'https://www.bea.gov/data/income-saving/personal-income-county-metro-and-other-areas'
 };
-const atlasStatSources = atlasUS ? usSources : ukSources;
+const jpSources = {
+  boundary:'https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N03-2025.html',
+  gdp:'https://www.esri.cao.go.jp/jp/sna/data/data_list/kenmin/files/contents/main_2023.html',
+  population:'https://www.e-stat.go.jp/stat-search/files?layout=datalist&stat_infid=000040507382',
+  aviation:'https://www.mlit.go.jp/k-toukei/koukuuyusoutoukei.html',
+  railway:'https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N02-2025.html'
+};
+const atlasStatSources = atlasJP ? jpSources : atlasUS ? usSources : ukSources;
 const usRegions = [
   {id:'lower48',label:'本土 48 州',lon:-95,lat:37.6,zoom:1},
   {id:'alaska',label:'阿拉斯加',lon:-158,lat:62,zoom:1.3},

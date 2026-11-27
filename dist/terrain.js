@@ -1,7 +1,7 @@
 const terrainTileSize = 604;
 const terrainTileCount = 112;
 const terrainLayers = 16;
-const terrainGrid = atlasUS ? {west:-188,north:72,rate:30,cols:3720,rows:1650} :
+const terrainGrid = atlasJP ? {west:122,north:46,rate:60,cols:1980,rows:1560} : atlasUS ? {west:-188,north:72,rate:30,cols:3720,rows:1650} :
   atlasUK ? {west:-9,north:62,rate:120,cols:1440,rows:1560} :
   {west:60,north:60,rate:30,cols:2700,rows:1800};
 const mapPaper = '#e3dbc4';

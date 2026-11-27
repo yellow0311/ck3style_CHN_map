@@ -102,3 +102,13 @@ aside{scrollbar-width:thin;scrollbar-color:#756c52 #27342e}
   body:has(#atlasLanguage:not([hidden])) header .brand .latin{display:none}
   body:has(#atlasLanguage:not([hidden])) #placeSearch{height:24px}
 }
+
+.jp-atlas .sidetop .eyebrow,.jp-atlas .legend h3 span,.jp-atlas .settings h3 span,.jp-atlas .titleplate>div:first-child{display:none}
+@media(max-width:700px){
+  .jp-atlas .mobile-legend{position:relative;top:auto;left:auto;width:fit-content;margin-top:8px;text-shadow:none;pointer-events:auto}
+  .jp-atlas .mobile-legend[open]{max-height:min(36vh,260px);overflow:auto}
+}
+@media(max-width:380px){
+  .country-switch a{padding-inline:.25rem}
+  header{gap:5px}
+}

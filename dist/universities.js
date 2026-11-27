@@ -1,5 +1,5 @@
 const universityLayer = (() => {
-  const categories = new Map(atlasUS ? [
+  const categories = new Map(atlasJP ? [['national','国立'],['public','公立'],['private','私立']] : atlasUS ? [
     ['public','公立'],['nonprofit','私立非营利'],['landgrant','赠地院校'],
     ['hbcu','历史悠久黑人院校'],['tribal','部落院校']
   ] : atlasUK ? [
@@ -28,8 +28,8 @@ const universityLayer = (() => {
     const count = failed ? '院校数据载入失败' : data ? ui('{n} 所院校',{n:matched}) : '正在载入院校…';
     return '<div class="theme-filters" role="group" aria-label="院校类别">'+controls+'</div>'+
       '<p data-university-total role="status">'+count+'</p>'+
-      '<p>未选时显示全部，多选时显示符合任一标签的院校。放大后展开校徽，点选标记查看所在'+(atlasUS ? '县级辖区' : atlasUK ? '地方辖区' : '城市')+'的院校名单。</p>'+
-      '<p><a href="'+atlasNotes(atlasUS ? 'us-universities' : atlasUK ? 'uk-universities' : 'university-data')+'">覆盖范围和来源 ↗</a></p>';
+      '<p>未选时显示全部，多选时显示符合任一标签的院校。放大后展开校徽，点选标记查看所在'+(atlasJP ? '市区町村' : atlasUS ? '县级辖区' : atlasUK ? '地方辖区' : '城市')+'的院校名单。</p>'+
+      '<p><a href="'+atlasNotes(atlasJP ? 'jp-universities' : atlasUS ? 'us-universities' : atlasUK ? 'uk-universities' : 'university-data')+'">覆盖范围和来源 ↗</a></p>';
   }
 
   function load() {
@@ -266,14 +266,14 @@ const universityLayer = (() => {
     const block = document.createElement('div');
     const name = document.createElement('strong');
     name.textContent = school.name;
-    if (sourceName(school)) name.title = sourceName(school);
+    if (!atlasJP && sourceName(school)) name.title = sourceName(school);
     block.append(name);
     const campusNames = campus?.filter(([label]) => !['院校名录','院校'].includes(label)) || [];
     if (campusNames.length) {
       const row = document.createElement('small');
       row.textContent = campusNames.map(([label,,original]) => ui(nameFor(label,original))).join(showOriginal ? ', ' : '、');
       const originals = campusNames.map(([, ,en]) => en).filter(Boolean);
-      if (originals.length) row.title = originals.join(' / ');
+      if (!atlasJP && originals.length) row.title = originals.join(' / ');
       block.append(row);
     }
     const tags = school.tags.map(key => ui(categories.get(key))).filter(Boolean);

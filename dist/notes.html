@@ -1,7 +1,7 @@
 <!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>图志手记 · 山河舆图</title><style>
 :root{background:#ece4cc;color:#2b362d;font:17px/1.8 "Songti SC","STSong",Georgia,serif}body{margin:0}header{background:#25312c;color:#ece4cc;border-bottom:2px solid #aa8e58;padding:12px max(24px,calc((100% - 780px)/2))}header a{color:inherit;text-decoration:none;white-space:nowrap}main{max-width:780px;margin:0 auto;padding:42px 24px 60px}h1{font-size:clamp(36px,7vw,62px);line-height:1.2;margin:0;letter-spacing:.12em}h2{font-size:25px;margin-top:34px;border-bottom:1px solid #b1a17a;padding-bottom:7px}h3{font-size:18px;margin-bottom:4px}p{margin-top:4px}a{color:#833e2c;text-underline-offset:4px}li+li{margin-top:10px}.intro{font-size:21px;margin-top:14px;color:#5d5948}table{width:100%;border-collapse:collapse}th,td{text-align:left;border-bottom:1px solid #cabea3;padding:8px;vertical-align:top}th{white-space:nowrap}small{color:#6e634d}
 </style></head><body><header><a id="atlasBack" href="./">← 返回山河舆图</a></header><main>
-<h1>图志手记</h1><p class="intro">从《十字军之王 III》的地图设计到中英美国别地理图集</p>
+<h1>图志手记</h1><p class="intro">从《十字军之王 III》的地图设计到国别地理图集</p>
 <h2>CK3 如何让一张地图承载不同尺度</h2>
 <table><thead><tr><th>视角</th><th>CK3 的地图表现</th><th>山河舆图的对应设计</th></tr></thead><tbody>
 <tr><th>远景</th><td>纸图突出领地轮廓和大地名，适于总览。</td><td>用浅色晕渲、较大的省名和行政填色建立全国格局。</td></tr>
@@ -63,7 +63,19 @@
 <p>铁路专题展示美国本土的 Amtrak 城际及长途客运，共 49 条线路记录和 538 个关联站点，按线路几何匹配邻近站点。公路收录美国运输统计局国家公路系统中 238 个州际公路和 289 个美国国道编号，线条经过制图简化。 <a href="https://www.arcgis.com/home/item.html?id=8f534a0c7468483f9837ef93e2e5ebb1">BTS Amtrak 线路</a> · <a href="https://services.arcgis.com/xOi1kZaI0eWDREZv/arcgis/rest/services/NTAD_National_Highway_System/FeatureServer">BTS 国家公路系统</a></p>
 <h3 id="us-aviation">民航机场</h3>
 <p>收录 634 座定期客运机场，按机场名录的规模字段区分。597 座机场有航点记录。航线依据 AirportMiles 整理的美国 BTS T‑100 实际旅客运输记录，统计窗口为 2025 年 8 月至 2026 年 7 月。点选机场可查看图内航线和图外目的地。 <a href="https://airportmiles.com/sources">AirportMiles 数据口径</a> · <a href="https://www.bts.gov/topics/airlines-and-airports/airline-information-download">BTS 航空数据</a></p>
+<h2 id="jp-data">日本图集的数据口径</h2>
+<p>行政图包含 47 个都道府县和 1,741 个市区町村。东京 23 个特别区可分别查看，政令指定城市按市合并。边界源自日本国土交通省 2025 年行政区域数据，经制图简化，并按 2025 年国势调查的市区町村范围收录。搜索支持简体中文、日文原名及五位行政区代码。 <a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N03-2025.html">行政区域数据</a> · <a href="https://github.com/HeRoMo/convert_to_geojson_jp">边界简化数据</a></p>
+<p>人口使用 2025 年国势调查确报，按万人展示。GDP 是 2023 财年现价地区生产总值，单位为亿日元。内阁府汇总表包含全部都道府县及札幌、仙台、横滨、川崎、名古屋、广岛六市的数值，其他市区町村在 GDP 图层按缺值显示。 <a href="https://www.e-stat.go.jp/stat-search/files?layout=datalist&amp;stat_infid=000040507382">日本总务省统计局人口表</a> · <a href="https://www.esri.cao.go.jp/jp/sna/data/data_list/kenmin/files/contents/main_2023.html">日本内阁府县民经济计算</a></p>
+<h3 id="jp-terrain">地形与自然地名</h3>
+<p>海拔采用 Mapzen 一角分高程格网，水系采用 Natural Earth 矢量数据。标注包括富士山、阿苏山、日本阿尔卑斯山脉、信浓川和琵琶湖等 42 个自然地名。 <a href="https://registry.opendata.aws/terrain-tiles/">Mapzen 高程</a> · <a href="https://www.naturalearthdata.com/downloads/10m-physical-vectors/">Natural Earth 水系</a></p>
+<h3 id="jp-universities">大学与校区</h3>
+<p>收录国土数值信息 2021 年学校数据中有坐标的 810 所大学，按学校代码去重。同校同一市区町村计一次，跨市区町村分别显示。支持国立、公立、私立筛选。这是该年度学校名录的地理快照。 <a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-P29-v2_0.html">日本国土交通省学校数据</a></p>
+<h3 id="jp-transport">铁路与公路</h3>
+<p>铁路用日本国土交通省 2025 年客运铁路数据，含 597 组线路和 9,046 个可关联车站。新干线单列，山形、秋田新干线使用的在来线区段按其底层线路显示。公路含 2020 年高速道路数据及 OpenStreetMap 收录的 1 至 58 号国道中的 55 条可用线路，线条经简化。 <a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N02-2025.html">铁路</a> · <a href="https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N06-v1_2.html">高速道路</a> · <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap 贡献者（ODbL）</a></p>
+<h3 id="jp-aviation">机场与直飞航点</h3>
+<p>地图收录 83 座机场，81 座有航点资料。国内连线对应 2025 财年国内定期客运实绩。国际部分使用国土交通省 2026 年冬季直飞班表，按班表所列城市显示 104 个航点。国际计划与实际执飞可能随时间调整，机场规模按坐标目录分类。 <a href="https://airportmiles.com/sources">国内航线与机场坐标</a> · <a href="https://www.mlit.go.jp/koku/koku_tk1_000013.html">日本国土交通省国际航班资料</a></p>
+<p>简体中文模式优先采用通行译名，较少见的假名名称按读音转写。可切换日语核对来源名称。</p>
 </main><script>
 const country = new URLSearchParams(location.search).get("country");
-if (country === "uk" || country === "us") document.getElementById("atlasBack").href = "./?country="+country+"&lang=zh";
+if (["jp","uk","us"].includes(country)) document.getElementById("atlasBack").href = "./?country="+country+"&lang=zh";
 </script></body></html>

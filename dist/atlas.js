@@ -15,7 +15,7 @@ const provinceColors = {
   '810000':'#cdb595', '820000':'#679a92'
 };
 const levelNames = atlasCountry.levels.map(uiLabel => ui(uiLabel));
-const districtLevelNames = atlasUS ? {} : atlasUK ? {
+const districtLevelNames = atlasUS || atlasJP ? {} : atlasUK ? {
   S92000003:'议会辖区',W92000004:'主要辖区',N92000002:'地方政府区'
 } : {
   '110000':'区级', '120000':'区级', '310000':'区级', '500000':'区县级',
@@ -23,9 +23,9 @@ const districtLevelNames = atlasUS ? {} : atlasUK ? {
 };
 const sarLabelDirections = {'810000':1,'820000':-1};
 const tooltip = byId('tooltip');
-const number = new Intl.NumberFormat(atlasLocale);
+const number = new Intl.NumberFormat(atlasLocale,{maximumFractionDigits:atlasJP ? 4 : 3});
 const transportLayers = {railway:railwayLayer,airports:airportLayer,roads:roadLayer,...(atlasUS ? {parks:parkLayer} : {})};
-const transportScope = {railway:'主要线路与车站',airports:'运输机场与直飞航线',roads:atlasUS ? '州际公路与主要美国国道' : atlasUK ? '高速公路与 A 级公路' : '国家高速与普通国道',parks:'国家公园及相连保护区'};
+const transportScope = {railway:'主要线路与车站',airports:'运输机场与直飞航线',roads:atlasJP ? '高速公路与主要国道' : atlasUS ? '州际公路与主要美国国道' : atlasUK ? '高速公路与 A 级公路' : '国家高速与普通国道',parks:'国家公园及相连保护区'};
 const terrainView = new AtlasTerrain(byId('terrainSurface'),redraw);
 let waterFeatures = [];
 let layers = [[],[],[]];
@@ -61,7 +61,7 @@ const childWeight = (region,weights) =>
   weights.get(region.p)?.[region.town ? 'town' : region.provinceDirect ? 'directCounty' : 'county'] ?? 0;
 levelButtons.forEach((button,level) => {
   button.textContent = levelNames[level];
-  button.hidden = atlasUS && level === 1;
+  button.hidden = !levelNames[level];
   button.onclick = () => {
     if (level === 0 && focusedProvince) {
       reset();
@@ -80,17 +80,17 @@ byId('placeSearch').placeholder = ui(atlasCountry.search);
 if (showOriginal) {
   document.body.classList.add('original-language');
   initializeOriginalChrome();
-  document.querySelector('.titleplate').append(document.querySelector('.mobile-legend'));
   document.querySelector('.brand h1').textContent = 'Shanhe Atlas';
   document.querySelector('.brand .latin').hidden = true;
 }
+if (showOriginal || atlasJP) document.querySelector('.titleplate').append(document.querySelector('.mobile-legend'));
 const countryButtons = [];
 for (const code of ['cn',...Object.keys(atlasCountries).filter(code => code !== 'cn').sort()]) {
   const config = atlasCountries[code];
   const link = document.createElement('a');
   link.dataset.country = code;
-  link.textContent = showOriginal ? config.shortName || config.originalName : config.name;
-  link.title = countryName(config);
+  link.textContent = showOriginal && !atlasJP ? config.shortName || config.originalName : ui(config.name);
+  link.title = atlasJP ? ui(config.name) : countryName(config);
   if (code === countryCode) link.setAttribute('aria-current','page');
   byId('countrySwitch').append(link);
   countryButtons.push(link);
@@ -110,17 +110,24 @@ if (atlasCountry.notes) document.querySelector('header .notes').href = atlasNote
 if (atlasUK) {
   document.body.classList.add('uk-atlas');
 }
-if (atlasUS) {
-  document.body.classList.add('us-atlas');
+if (atlasUS || atlasJP) {
+  document.body.classList.add(atlasUS ? 'us-atlas' : 'jp-atlas');
+  if (atlasJP) document.querySelector('.brand .latin').hidden = true;
+  byId('usRegions').setAttribute('aria-label',ui(atlasUS ? '美国地图区域' : '日本地图区域'));
+  const regions = atlasUS ? usRegions : [
+    {id:'japan-home',label:'日本全图',zoom:1},
+    {id:'ryukyu',label:'冲绳诸岛',lon:127.8,lat:26.4,zoom:7.5},
+    {id:'ogasawara',label:'小笠原诸岛',lon:142.2,lat:27.0,zoom:15}
+  ];
   byId('usRegions').hidden = false;
-  for (const {id,label,lon,lat,zoom:targetZoom} of usRegions) {
+  for (const {id,label,lon,lat,zoom:targetZoom} of regions) {
     const button = document.createElement('button');
     button.type = 'button';
     button.dataset.region = id;
     button.textContent = ui(label);
     button.onclick = () => {
       reset();
-      fly(targetZoom,...project(lon,lat));
+      fly(targetZoom,...(lon == null ? atlasCountry.center : project(lon,lat)));
     };
     byId('usRegions').append(button);
   }
@@ -133,7 +140,7 @@ for (const [key,[label,english]] of Object.entries(themes)) {
   const button = document.createElement('button');
   button.className = 'theme';
   button.dataset.theme = key;
-  button.innerHTML = svgIcon(key)+'<span><strong>'+ui(label)+'</strong>'+(showOriginal ? '' : '<small>'+english+'</small>')+'</span>';
+  button.innerHTML = svgIcon(key)+'<span><strong>'+ui(label)+'</strong>'+(showOriginal || atlasJP ? '' : '<small>'+english+'</small>')+'</span>';
   button.onclick = () => setTheme(key);
   byId('themes').append(button);
 }
@@ -153,7 +160,7 @@ function switchLanguage() {
   target.searchParams.set('lang',next);
   target.searchParams.set('view',theme);
   try {
-    localStorage.setItem('shanhe-atlas-language',next);
+    localStorage.setItem(languageStorageKey(atlasCountry),next);
     if (fit && records.size) sessionStorage.setItem('shanhe-atlas-view',JSON.stringify({
       country:countryCode,lang:next,theme,mode,zoom,center:world(width/2,height/2),
       province:focusedProvince?.id,city:focusedCity?.id,selection:records.get(selected?.id) === selected ? selected?.id : null
@@ -176,7 +183,7 @@ function restoreLanguageView() {
   if (bookmark.selection) select(records.get(bookmark.selection) || null);
 }
 function cityMetricYear(id,index) {
-  return atlasUS ? 2024 : atlasUK ? [2024,2025][index] : cityStatistics.years?.[id]?.[index] ?? cityStatistics.year;
+  return atlasJP ? [2023,2025][index] : atlasUS ? 2024 : atlasUK ? [2024,2025][index] : cityStatistics.years?.[id]?.[index] ?? cityStatistics.year;
 }
 const metricValues = region => !atlasCN ? localStatistics[region.id] : region.layer === 0
   ? indicators[region.id.slice(0,2)] : cityStatistics.regions[region.id];
@@ -219,10 +226,10 @@ function metricLegend(key) {
   const figures = statistics[key];
   const city = usesCityMetrics();
   const scale = city ? metricScale(key,focusedProvince) : figures;
-  const scope = !atlasCN ? (city ? (focusedCity || focusedProvince)?.n || levelNames[mode] : atlasUS ? '50 州与哥伦比亚特区' : '英国四个组成国') :
+  const scope = !atlasCN ? (city ? (focusedCity || focusedProvince)?.n || levelNames[mode] : atlasJP ? '47 个都道府县' : atlasUS ? '50 州与哥伦比亚特区' : '英国四个组成国') :
     city ? focusedProvince?.n || '全国地级' : '大陆 31 个省级地区';
-  let legend = '<p>'+(city ? scale.yearLabel : ui('{year} 年',{year:cityMetricYear('',figures.index)}))+' · '+ui(scope)+'<br>'+ui(figures.unit)+
-    ' · '+ui(key === 'gdp' ? '当年价' : !atlasCN ? '年中常住' : '年末常住')+'</p>';
+  let legend = '<p>'+(atlasJP && key === 'gdp' ? ui('{year} 财年',{year:cityMetricYear('',figures.index)}) : city ? scale.yearLabel : ui('{year} 年',{year:cityMetricYear('',figures.index)}))+' · '+ui(scope)+'<br>'+ui(figures.unit)+
+    ' · '+ui(key === 'gdp' ? '当年价' : atlasJP ? '全国人口普查' : !atlasCN ? '年中常住' : '年末常住')+'</p>';
   legend += scale.colors.map((color,i) => {
     const low = scale.breaks[i-1] ?? scale.minimum;
     const high = scale.breaks[i];
@@ -233,14 +240,16 @@ function metricLegend(key) {
   if (city && scale.total) legend += '<p>'+(focusedProvince ? ui(!atlasCN ? '按当前地区分档' : '按省内数值分档')+' · ' : '')+
     ui('{n} / {total} 有数据',{n:scale.covered,total:scale.total})+'</p>';
   const statSource = atlasUK && key === 'gdp' && mode < 2 ? ukSources.gdpRegional : atlasStatSources[key];
-  legend += !atlasCN ? '<p><a href="'+statSource+'">'+ui(atlasUS ? '美国经济分析局（BEA）' : '英国国家统计局（ONS）')+' ↗</a></p>' :
+  legend += !atlasCN ? '<p><a href="'+statSource+'">'+ui(atlasJP ? key === 'gdp' ? '日本内阁府' : '日本总务省统计局' : atlasUS ? '美国经济分析局（BEA）' : '英国国家统计局（ONS）')+' ↗</a></p>' :
     city ? '<p>点选地区查看数值和来源。</p>' :
     '<p><a href="'+statsSource+'" target="_blank" rel="noopener">《2025 甘肃统计提要》↗</a></p>';
+  if (atlasJP && key === 'gdp' && city) legend += '<p>'+ui('市区町村 GDP 仅显示日本内阁府同一统计表中公布的城市。')+'</p>';
   return legend;
 }
 function administrativeLegend() {
   const township = townshipGroups.get(focusedCity?.id);
   const local = districtLevelNames[focusedProvince?.id];
+  if (atlasJP) return '<div class="legendrow"><i class="line"></i>都道府县边界</div><div class="legendrow"><i class="line county"></i>市区町村边界</div>';
   if (atlasUS) return '<div class="legendrow"><i class="line"></i>州与联邦特区边界</div><div class="legendrow"><i class="line county"></i>县及同级辖区</div>';
   const labels = atlasUK ? ['组成国边界','英格兰大区边界',ui('{area}边界',{area:ui(local || levelNames[2])})] :
     ['省级政区','地级政区',township ? township.label+'边界' : local ? local+'边界' : '县级政区'];
@@ -294,10 +303,13 @@ function setTheme(key) {
     const destination = link.dataset.country;
     if (destination !== 'cn') {
       query.set('country',destination);
-      if (atlasCountries[destination].originalLocale && (showOriginal || languageParam || savedAtlasLanguage())) query.set('lang',foreignLanguage);
+      const destinationCountry = atlasCountries[destination];
+      if (languageStorageKey(destinationCountry) === languageStorageKey(atlasCountry) && (showOriginal || languageParam || savedAtlasLanguage())) {
+        query.set('lang',foreignLanguage);
+      }
     }
     if (key !== 'admin' && (destination === 'cn' || !Object.hasOwn(chinaOnlyThemes,key)) &&
-        (key !== 'parks' || destination === 'us') && (key !== 'autonomy' || destination !== 'us')) query.set('view',key);
+        (key !== 'parks' || destination === 'us') && (key !== 'autonomy' || ['cn','uk'].includes(destination))) query.set('view',key);
     link.href = query.size ? '?'+query : './';
   }
   document.body.classList.toggle('terrain-view',key === 'terrain');
@@ -344,7 +356,7 @@ function setTheme(key) {
       return swatch(label,cssColor(color));
     }).join('')+swatch('水域',cssColor(elevationWater));
     legend += Object.values(terrainNameStyles).map(({label,color}) => swatch(label,color)).join('');
-    legend += '<p>放大查看更多自然地名。</p><p><a href="'+atlasNotes(atlasUS ? 'us-terrain' : atlasUK ? 'uk-terrain' : 'terrain-data')+'">地形与水系来源 ↗</a></p>';
+    legend += '<p>放大查看更多自然地名。</p><p><a href="'+atlasNotes(atlasJP ? 'jp-terrain' : atlasUS ? 'us-terrain' : atlasUK ? 'uk-terrain' : 'terrain-data')+'">地形与水系来源 ↗</a></p>';
   } else if (key === 'food') {
     legend = swatch('辛香风味示例','#a94536')+swatch('沿海及江南风味示例','#548465')+swatch('其他地方风味示例','#a37c40')+'<p>点选图标查看代表食物。</p>';
   }
@@ -437,7 +449,7 @@ function updateLevel() {
   byId('level').textContent = ui('{label}视图',{label:levelName});
   const scope = (focusedCity || focusedProvince)?.n || ui('全国');
   if (university) {
-    byId('plateLevel').textContent = scope+' · '+ui(mode || focusedProvince ? (atlasUS ? '按县展示' : atlasUK ? '地方辖区统计' : '地级统计') : (atlasUS ? '按州汇总' : atlasUK ? '组成国汇总' : '省级汇总'));
+    byId('plateLevel').textContent = scope+' · '+ui(mode || focusedProvince ? (atlasJP ? '按市区町村展示' : atlasUS ? '按县展示' : atlasUK ? '地方辖区统计' : '地级统计') : (atlasJP ? '按都道府县汇总' : atlasUS ? '按州汇总' : atlasUK ? '组成国汇总' : '省级汇总'));
     return;
   }
   if (transportScope[theme]) {
@@ -451,7 +463,7 @@ function updateLevel() {
     ? caption+(township.boundaryCount ? ' · 部分边界' : ' · 名录')
     : focusedProvince && !provinceHasCities && !provinceHasCounties ? scope+' · 仅收录省级边界'
     : localCoverage ? caption : scope+' · '+ui('暂无{level}边界',{level:levelName});
-  const suffix = statistics[theme] ? (!atlasCN ? ' · '+ui('{year} 年',{year:cityMetricYear('',statistics[theme].index)}) :
+  const suffix = statistics[theme] ? (!atlasCN ? ' · '+ui(atlasJP && theme === 'gdp' ? '{year} 财年' : '{year} 年',{year:cityMetricYear('',statistics[theme].index)}) :
     usesCityMetrics() ? ' · 地级统计' : ' · 2024 年省级统计') : '';
   const plate = byId('plateLevel');
   if (plate.textContent !== coverage+suffix) plate.textContent = coverage+suffix;
@@ -503,7 +515,7 @@ function provinceColor(region) {
   const figures = statistics[theme];
   if (!figures) {
     const stateColors = ['#ab9873','#838da7','#819e8d','#bc916b','#a08180','#929c69','#769596','#b6a482'];
-    return atlasUS ? stateColors[(+region.id.slice(0,2)*7+Math.floor(+region.id.slice(0,2)/8))%stateColors.length] : provinceColors[region.id];
+    return atlasUS || atlasJP ? stateColors[(+region.id.slice(0,2)*7+Math.floor(+region.id.slice(0,2)/8))%stateColors.length] : provinceColors[region.id];
   }
   const value = metricValues(region)?.[figures.index];
   return metricColor(value,figures);
@@ -848,6 +860,7 @@ function resize() {
   } else {
     x = width/2-atlasCountry.center[0]*fit;
     y = height/2-atlasCountry.center[1]*fit;
+    showCoordinates(...atlasCountry.center);
   }
   redraw();
 }
@@ -1043,13 +1056,14 @@ function select(region) {
     const [gdp,population] = metricValues(region) ?? [];
     const value = (n,unit) => n == null ? ui('暂无数据') : number.format(n)+' '+ui(unit);
     byId('crumb').textContent = (parents.length ? parents.join(' / ')+' · ' : '')+(ui(region.type) || levelNames[region.layer]);
-    byId('detailText').textContent = [sourceName(region) !== region.n ? sourceName(region) : null,
-      ui('{year} 年',{year:cityMetricYear(region.id,0)})+' GDP　'+value(gdp,statistics.gdp.unit),
-      ui('{year} 年年中人口',{year:cityMetricYear(region.id,1)})+'　'+value(population,'万人'),
+    byId('detailText').textContent = [!atlasJP && sourceName(region) !== region.n ? sourceName(region) : null,
+      ui(atlasJP ? '{year} 财年' : '{year} 年',{year:cityMetricYear(region.id,0)})+' GDP　'+value(gdp,statistics.gdp.unit),
+      ui(atlasJP ? '{year} 年人口普查' : '{year} 年年中人口',{year:cityMetricYear(region.id,1)})+'　'+value(population,'万人'),
       region.statCode ? ui('来源统计沿用调整前区界')+' · '+region.statCode : null,
-      (atlasUS ? 'FIPS' : 'ONS')+(showOriginal ? ' code · ' : ' 编码　')+region.id].filter(Boolean).join('\n');
+      atlasJP ? ui('行政区代码')+'　'+region.id : (atlasUS ? 'FIPS' : 'ONS')+(showOriginal ? ' code · ' : ' 编码　')+region.id].filter(Boolean).join('\n');
     const statLabel = atlasUS ? 'BEA' : 'ONS';
-    addSources([[statLabel+' · GDP',atlasUK && region.layer !== 2 ? ukSources.gdpRegional : atlasStatSources.gdp],
+    if (atlasJP) addSources([[ui('日本内阁府')+' · GDP',jpSources.gdp],[ui('全国人口普查'),jpSources.population],[ui('行政边界'),jpSources.boundary]]);
+    else addSources([[statLabel+' · GDP',atlasUK && region.layer !== 2 ? ukSources.gdpRegional : atlasStatSources.gdp],
       [statLabel+' · '+ui('年中人口'),atlasStatSources.population],[ui('行政边界'),atlasStatSources.boundary]]);
   } else if (region.town) {
     const lines = [region.n.endsWith('办事处') ? '办事处' : region.n.endsWith('街道') ? '街道' : '镇'];

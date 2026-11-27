@@ -1,8 +1,8 @@
 const railwayLayer = (() => {
   const groups = {
-    passenger:{label:atlasUS ? '东北走廊阿西乐（Acela）' : atlasUK ? '高速铁路（HS1 等）' : '高铁与客运专线',color:'#a13e37',dash:[],width:2.3},
-    mixed:{label:atlasUS ? '城际与长途客运线' : '普速客货干线',color:'#406d80',dash:[],width:1.65},
-    ...(atlasUS ? {} : {freight:{label:'重点货运线',color:'#90621d',dash:[5,3],width:2.1}})
+    passenger:{label:atlasJP ? '新干线' : atlasUS ? '东北走廊阿西乐（Acela）' : atlasUK ? '高速铁路（HS1 等）' : '高铁与客运专线',color:'#a13e37',dash:[],width:2.3},
+    mixed:{label:atlasJP ? '常规铁路、地铁与有轨电车' : atlasUS ? '城际与长途客运线' : '普速客货干线',color:'#406d80',dash:[],width:1.65},
+    ...(atlasUS || atlasJP ? {} : {freight:{label:'重点货运线',color:'#90621d',dash:[5,3],width:2.1}})
   };
   const enabled = new Set([...Object.keys(groups),'stations']);
   let lines = [];
@@ -18,10 +18,10 @@ const railwayLayer = (() => {
     return '<div class="theme-filters" role="group" aria-label="铁路类型">'+
       Object.entries(groups).map(([key,{color,dash,label}]) => checkbox(key,
         '<i class="rail-sample'+(dash.length ? ' rail-dashed' : '')+'" style="color:'+color+'"></i>',label)).join('')+
-      checkbox('stations','<i class="rail-dot"></i><i class="rail-square"></i>','客站与货运节点')+'</div>'+
+      checkbox('stations','<i class="rail-dot"></i><i class="rail-square"></i>',(atlasJP ? '车站' : '客站与货运节点'))+'</div>'+
       (failed ? '<p role="status">铁路数据载入失败</p>' : loaded
-        ? '<p>'+ui('{lines} 条线路 · {stations} 个主要车站',{lines:lines.length,stations:stations.length})+'</p>' : '<p role="status">正在载入铁路…</p>')+
-      '<p>点选线路查看'+(!atlasCN ? '邻近车站' : '沿途车站')+'。</p><p><a href="'+atlasNotes(atlasUS ? 'us-transport' : atlasUK ? 'uk-transport' : 'railway-data')+'">铁路数据来源 ↗</a></p>';
+        ? '<p>'+ui(atlasJP ? '{lines} 条线路 · {stations} 个车站' : '{lines} 条线路 · {stations} 个主要车站',{lines:lines.length,stations:stations.length})+'</p>' : '<p role="status">正在载入铁路…</p>')+
+      '<p>点选线路查看'+(atlasCN || atlasJP ? '沿途车站' : '邻近车站')+'。</p><p><a href="'+atlasNotes(atlasJP ? 'jp-transport' : atlasUS ? 'us-transport' : atlasUK ? 'uk-transport' : 'railway-data')+'">铁路数据来源 ↗</a></p>';
   }
 
   function load() {
@@ -153,8 +153,8 @@ const railwayLayer = (() => {
   function show(item) {
     byId('crumb').textContent = ui(item.rail === 'line' ? groups[item.kind].label : item.passenger ? '客运车站' : '货运节点');
     const detail = item.rail === 'line'
-      ? ui(!atlasCN ? '{n} 个已收录邻近车站' : '{n} 个已收录主要车站',{n:item.stops.length}) : ui(!atlasCN ? '邻近线路' : '经过线路');
-    byId('detailText').textContent = sourceName(item) && sourceName(item) !== item.n ? sourceName(item)+'\n'+detail : detail;
+      ? ui(atlasJP ? '{n} 个沿途车站' : !atlasCN ? '{n} 个已收录邻近车站' : '{n} 个已收录主要车站',{n:item.stops.length}) : ui(atlasCN || atlasJP ? '经过线路' : '邻近线路');
+    byId('detailText').textContent = !atlasJP && sourceName(item) && sourceName(item) !== item.n ? sourceName(item)+'\n'+detail : detail;
     const content = byId('railDetail');
     const links = document.createElement('ul');
     links.className = 'school-city-list';
@@ -163,7 +163,7 @@ const railwayLayer = (() => {
       const button = document.createElement('button');
       button.type = 'button';
       button.textContent = entry.n;
-      if (sourceName(entry)) button.title = sourceName(entry);
+      if (!atlasJP && sourceName(entry)) button.title = sourceName(entry);
       button.onclick = () => {
         select(entry);
         if (entry.rail === 'station') fly(Math.max(zoom,5),entry.x,entry.y);
@@ -176,7 +176,7 @@ const railwayLayer = (() => {
     source.href = item.source || 'https://www.openstreetmap.org/'+(item.osmType || 'relation')+'/'+(item.osmId || item.id);
     source.target = '_blank';
     source.rel = 'noopener';
-    source.textContent = item.source ? ui('Amtrak 或美国运输统计局 ↗') : 'OpenStreetMap ↗';
+    source.textContent = item.source ? ui(atlasJP ? '日本国土交通省 ↗' : 'Amtrak 或美国运输统计局 ↗') : 'OpenStreetMap ↗';
     content.replaceChildren(links,source);
     content.hidden = false;
   }
