@@ -818,7 +818,17 @@ function drawLabels(bounds,weights,now) {
   const occupied = [];
   const labels = byId('labels').checked;
   regionLabelHitboxes = [];
+  const chinaOverview = atlasCN && mode === 0;
+  const inset = byId('inset');
+  if (chinaOverview && !inset.hidden) {
+    const {left,top} = canvas.getBoundingClientRect();
+    const rect = inset.getBoundingClientRect();
+    occupied.push([rect.left-left-3,rect.top-top-3,rect.right-left+3,rect.bottom-top+3]);
+  }
   const sarLabelOffset = 19*(1-smooth(2,5,zoom));
+  const provinceLabelPositions = [[0,-12],[0,12],[-12,0],[12,0],[-12,-12],[12,-12],[-12,12],[12,12],[0,-24],[0,24]];
+  const sarLabelPositions = [[-24,0],[-36,0],[-24,18],[-36,18]];
+  const provinceCallouts = {'120000':[[30,9],[34,-9],[26,18]],'710000':[[-29,0],[-29,-18],[0,-49]]};
   function reserveLabel(text,px,py,fontSize) {
     if (!(px >= 10 && py >= 12 && px <= width-10 && py <= height-12)) return;
     ctx.font = '600 '+fontSize+'px '+labelFamily;
@@ -900,18 +910,50 @@ function drawLabels(bounds,weights,now) {
       ? focusedProvince && zoom >= 3.6 && (!atlasCN ? i === mode : i === 1 || region.provinceDirect) && isFocused(region)
       : i === 0 && zoom < 1.7 && weight.color;
     const value = metric && showsValue ? metricValues(region)?.[metric.index] : undefined;
-    const name = i === 0 ? shortName(region.n) : region.n;
+    const name = i === 0 && !atlasCN ? shortName(region.n) : region.n;
     const year = metric && cityMetricYear(region.id,metric.index);
     const text = name+(Number.isFinite(value) && width > 850 ? ' '+number.format(value)+
       (atlasCN && year !== cityStatistics.year ? '（'+year+'）' : '') : '');
-    const size = i === 0 ? (width > 750 ? 16 : 11) : 12;
+    const provinceOverview = chinaOverview && i === 0;
+    const provinceSize = provinceOverview && width < 1000 ? (width > 750 ? 13 : 11) : width > 750 ? 16 : 11;
+    const size = i === 0 ? provinceSize : 12;
     const direction = sarLabelDirections[region.id] || 0;
-    const offset = direction*sarLabelOffset;
-    const lift = region.b ? 0 : 12;
+    let offset = direction*sarLabelOffset;
+    let lift = region.b ? 0 : 12;
+    if (direction && provinceOverview) {
+      const separation = 1-smooth(2,5,zoom);
+      ctx.font = '600 '+size+'px '+labelFamily;
+      offset = direction*(ctx.measureText(text).width/2+7)*separation;
+      lift = -12*separation;
+    }
     const anchor = atlasCN ? chinaBoundaries.labelAnchor(region) : undefined;
     const [px,py] = screen(...(anchor ?? [region.x,region.y]));
-    const half = reserveLabel(text,px+offset,py-lift,size);
-    if (half) targetLabels.set(region.id,{region,text,size,offset,lift,half,anchor,sx:px+offset,sy:py-lift,
+    let half = reserveLabel(text,px+offset,py-lift,size);
+    let callout = direction && provinceOverview && Math.abs(offset) > 1;
+    if (!half && provinceOverview && px >= 0 && px <= width && py >= 0 && py <= height) {
+      ctx.save();
+      ctx.setTransform(dpr*scale,0,0,dpr*scale,dpr*x,dpr*y);
+      const boundary = mapPath(region);
+      for (const [shiftX,shiftY] of direction ? sarLabelPositions : provinceLabelPositions) {
+        const dx = offset+shiftX, dy = shiftY-lift;
+        if (!direction && !ctx.isPointInPath(boundary,(px+dx)*dpr,(py+dy)*dpr,'evenodd')) continue;
+        half = reserveLabel(text,px+dx,py+dy,size);
+        if (!half) continue;
+        offset = dx;
+        lift = -dy;
+        break;
+      }
+      ctx.restore();
+      if (!half) for (const [dx,dy] of provinceCallouts[region.id] || []) {
+        half = reserveLabel(text,px+dx,py+dy,size);
+        if (!half) continue;
+        offset = dx;
+        lift = -dy;
+        callout = true;
+        break;
+      }
+    }
+    if (half) targetLabels.set(region.id,{region,text,size,offset,lift,half,anchor,callout,sx:px+offset,sy:py-lift,
       alpha:alpha*(points && mode===0 ? .56 : 1)});
   }
   const priorityRegion = selected?.layer === 2 || (theme === 'terrain' && selected?.layer != null) ? selected : null;
@@ -955,9 +997,19 @@ function drawLabels(bounds,weights,now) {
   } else {
     displayedLabels = targetLabels;
   }
-  for (const {region,text,size,alpha,half,sx,sy,enclosed} of displayedLabels.values()) {
+  for (const {region,text,size,alpha,half,sx,sy,enclosed,callout} of displayedLabels.values()) {
+    if (chinaOverview && callout) {
+      const [px,py] = screen(region.x,region.y);
+      ctx.beginPath();
+      ctx.moveTo(px,py);
+      ctx.lineTo(clamp(px,sx-half+2,sx+half-2),clamp(py,sy-7,sy+7));
+      ctx.strokeStyle = '#625749';
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = alpha;
+      ctx.stroke();
+    }
     paintLabel(text,sx,sy,size,'#403728',alpha);
-    if ((enclosed || sarLabelDirections[region.id] || townshipGroups.has(region.id) || region.town || region.provinceDirect || (region.locality && region.d) ||
+    if ((enclosed || callout || sarLabelDirections[region.id] || townshipGroups.has(region.id) || region.town || region.provinceDirect || (region.locality && region.d) ||
         (theme === 'autonomy' && showsAutonomy(region))) &&
         targetLabels.has(region.id) && alpha >= .36) {
       regionLabelHitboxes.push({region,sx,sy,half,enclosed});
