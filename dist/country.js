@@ -38,6 +38,24 @@ const atlasCountries = {
  }
 };
 const atlasPeriods = {
+  'sanguo-262':{
+    name:'三国时期',originalName:'三国时期',year:262,
+    mapTitle:'三国时期局势图',
+    caption:'魏景元三年 · 汉景耀五年 · 吴永安五年 · 262 年',notes:'sanguo-262-data',volume:'三',
+    capitalLegend:'都城',
+    capitals:[
+      {name:'洛阳',coordinates:[112.454,34.620]},
+      {name:'成都',coordinates:[104.066,30.659]},
+      {name:'建业',coordinates:[118.780,32.042]}
+    ],
+    west:62,north:57,lonScale:14,latScale:17,
+    viewWidth:1240,viewHeight:780,center:[620,360],
+    terrainGrid:{west:60,north:55,rate:30,cols:2550,rows:1350},
+    routeTier:true,geometryVersion:'sanguo262-v3',
+    levels:['政权','州级','郡国及治所','县级治所'],
+    search:'搜索政权、州、郡国或县',
+    terrainNote:'海拔采用现代测量。水系参照第三册图幅，部分河湖采用后世历史及现代地理资料。'
+  },
   'sui-612':{
     name:'隋朝',originalName:'隋朝',year:612,
     caption:'大业八年 · 612 年',notes:'sui-612-data',volume:'五',

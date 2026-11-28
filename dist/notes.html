@@ -18,6 +18,8 @@
 <p>中国主图的省、地两级边界按行政管理口径绘制。加格达奇、松岭两区地权属内蒙古，主图将两区随黑龙江省大兴安岭地区着色，进入大兴安岭地区后可点选两区。<a href="https://www.dxal.gov.cn/dxal/c100055/202510/c13_321398.shtml">大兴安岭地区行政公署规划说明</a></p>
 <h3>统计口径在缩放中保持可辨</h3>
 <p>GDP 与人口在全国总览按省级数值着色，切到全国地级视图使用统一的地级色阶。进入某个省份后，图例按省内已有数据分为最多五档，颜色越深表示数值越高。灰色表示缺少该项数据。点选地级行政区可查看当地的 GDP、常住人口和数据来源。</p>
+<h2 id="sanguo-262-data">三国时期 · 魏景元三年、汉景耀五年、吴永安五年（262 年）</h2>
+<p>疆域、州界与郡国界参照谭其骧主编《中国历史地图集》第三册《三国时期全图》（262 年）及中研院 CCTS 的 262 年配准图层。全图按魏（都洛阳）、蜀汉（都成都）、吴（都建业）三方政权展示，支持政权、州级、郡国与县级治所四级下钻。魏辖十二州及西域长史府，蜀汉辖益州，吴辖扬、荆、交三州（广州于 264 年始复置）。郡国与县级治所采用 CHGIS V6 的 262 年有效记录，并补录辽东、乐浪、带方、交趾、西域长史府等边疆郡治。<a href="https://gis.sinica.edu.tw/showwmts/index.php?l=ad0262&amp;s=ccts">中研院 262 年图层</a> · <a href="https://doi.org/10.7910/DVN/WW1PD6">CHGIS 府级治所</a> · <a href="https://doi.org/10.7910/DVN/Q9VOF5">CHGIS 县级治所</a></p>
 <h2 id="sui-612-data">隋朝 · 大业八年（612 年）</h2>
 <p>疆域与各郡界线参照谭其骧主编《中国历史地图集》第五册《隋时期全图》（大业八年）及中研院 CCTS 的 612 年配准图层。隋大业三年改州为郡、实行郡县二级制，全图直接以各郡为基本面状单元绘制准确共边，县级政区以可点选的治所点标注，都城标注大兴（长安）。<a href="https://gis.sinica.edu.tw/showwmts/index.php?l=ad0612&amp;s=ccts">中研院 612 年图层</a> · <a href="https://doi.org/10.7910/DVN/WW1PD6">CHGIS 府级治所</a> · <a href="https://doi.org/10.7910/DVN/Q9VOF5">CHGIS 县级治所</a></p>
 <h2 id="tang-741-data">唐朝 · 开元二十九年（741 年）</h2>
@@ -126,6 +128,6 @@
 const params = new URLSearchParams(location.search);
 const country = params.get("country");
 const history = params.get("history");
-if (["sui-612","tang-741","song-1111","song-1208","yuan-1330","ming-1582","qing-1820"].includes(history)) document.getElementById("atlasBack").href = "./?history="+history;
+if (["sanguo-262","sui-612","tang-741","song-1111","song-1208","yuan-1330","ming-1582","qing-1820"].includes(history)) document.getElementById("atlasBack").href = "./?history="+history;
 else if (["fr","jp","uk","us"].includes(country)) document.getElementById("atlasBack").href = "./?country="+country+"&lang=zh";
 </script></body></html>
