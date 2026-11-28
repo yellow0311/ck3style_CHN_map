@@ -45,7 +45,7 @@ const atlasPeriods = {
     west:62,north:57,lonScale:14,latScale:17,
     viewWidth:1150,viewHeight:760,center:[665,365],
     terrainGrid:{west:60,north:55,rate:30,cols:2550,rows:1350},
-    geometryVersion:'sui612-v2',
+    geometryVersion:'sui612-v3',
     levels:['郡级','','县级治所'],
     search:'搜索郡或县',
     terrainNote:'海拔采用现代测量。水系参照第五册图幅，部分河湖采用后世历史及现代地理资料。'

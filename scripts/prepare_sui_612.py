@@ -242,7 +242,7 @@ def build_admin(ccts_dir, chgis, elevation_cache):
     for ident, color in zip(cmd_ids, colors):
         seat, geo_geom = cmds[ident]
         geom = proj_cmds[ident]
-        sx, sy = xy(seat['lon'], seat['lat'])
+        sx, sy = xy(108.95, 34.82) if seat['n'] == '京兆郡' else xy(seat['lon'], seat['lat'])
         rec = {
             'id': ident,
             'n': seat['n'],
