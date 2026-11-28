@@ -1,9 +1,9 @@
 const terrainTileSize = 604;
 const terrainTileCount = 112;
 const terrainLayers = 16;
-const terrainGrid = atlasFR ? {west:-6,north:52,rate:120,cols:1920,rows:1320} : atlasJP ? {west:122,north:46,rate:60,cols:1980,rows:1560} : atlasUS ? {west:-188,north:72,rate:30,cols:3720,rows:1650} :
+const terrainGrid = atlasHistory?.terrainGrid || (atlasFR ? {west:-6,north:52,rate:120,cols:1920,rows:1320} : atlasJP ? {west:122,north:46,rate:60,cols:1980,rows:1560} : atlasUS ? {west:-188,north:72,rate:30,cols:3720,rows:1650} :
   atlasUK ? {west:-9,north:62,rate:120,cols:1440,rows:1560} :
-  {west:60,north:60,rate:30,cols:2700,rows:1800};
+  {west:60,north:60,rate:30,cols:2700,rows:1800});
 const mapPaper = '#e3dbc4';
 const elevationColors = [
   [244,236,213],[230,210,171],[208,175,127],[181,137,93],[148,99,67],[100,62,48]
@@ -131,7 +131,7 @@ class AtlasTerrain {
   }
 
   async loadGrid(name,cols,rows) {
-    const response = await fetch(atlasData(`terrain/${name}.hgt.gz?v=1`));
+    const response = await fetch(atlasData(`terrain/${name}.hgt.gz?v=${atlasHistory?.geometryVersion || 1}`));
     if (!response.ok) throw new Error(`高程数据 ${name} (${response.status})`);
     let buffer = await response.arrayBuffer();
     if (buffer.byteLength !== cols*rows*2) {

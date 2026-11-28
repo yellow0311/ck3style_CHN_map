@@ -1,3 +1,7 @@
 .DS_Store
 __pycache__/
 *.pyc
+/dist/data/qing-1820/
+/dist/data/ming-1582/
+/dist/data/yuan-1330/
+/dist/data/song-1208/

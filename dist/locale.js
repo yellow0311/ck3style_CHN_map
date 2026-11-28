@@ -1,5 +1,6 @@
 const uiCatalogs = {
   fr:{
+    '国家首都':'Capitale nationale',
     '切换国家':'Choisir un pays','显示语言':'Langue d’affichage','搜索行政区':'Rechercher un territoire','行政区候选':'Résultats',
     '图志手记':'Sources','图层典藏':'Couches cartographiques','地图主题':'Thèmes cartographiques','舆图图例':'Légende','显示设置':'Affichage',
     '地名标注':'Noms de lieux','地势晕渲':'Relief ombré','山河舆图编绘室':'Atlas Shanhe','交互地图':'Carte interactive · {country}',
@@ -59,6 +60,7 @@ const uiCatalogs = {
     '{label}资料 ↗':'Source · {label} ↗','分层地理图集':'Atlas géographique · {country}','{label}视图':'{label}'
   },
   ja:{
+    '国家首都':'首都',
     '切换国家':'国を切り替える','显示语言':'表示言語','搜索行政区':'行政区域を検索','行政区候选':'検索結果',
     '图志手记':'地図の資料','图层典藏':'地図レイヤー','地图主题':'地図テーマ','舆图图例':'凡例','显示设置':'表示設定',
     '地名标注':'地名ラベル','地势晕渲':'地形の陰影','山河舆图编绘室':'山河地図帳','交互地图':'{country}のインタラクティブ地図',
@@ -113,6 +115,7 @@ const uiCatalogs = {
     '{label}视图':'{label}'
   },
   en:{
+    '国家首都':'National capital',
     '切换国家':'Choose a country','显示语言':'Display language','搜索行政区':'Search administrative areas',
     '行政区候选':'Search results','图志手记':'Atlas notes','图层典藏':'Map layers','地图主题':'Map themes',
     '舆图图例':'Legend','显示设置':'Display','地名标注':'Place labels','地势晕渲':'Terrain shading',
@@ -266,6 +269,7 @@ function initializeOriginalChrome() {
 }
 function atlasNotes(anchor) {
   const page = showOriginal && atlasCountry.originalNotes ? atlasCountry.originalNotes : 'notes.html';
-  return page+(!atlasCN ? '?country='+countryCode+'&lang='+foreignLanguage : '')+'#'+anchor;
+  const query = atlasHistory ? '?history='+historyParam : !atlasCN ? '?country='+countryCode+'&lang='+foreignLanguage : '';
+  return page+query+'#'+anchor;
 }
 document.documentElement.lang = atlasLocale;

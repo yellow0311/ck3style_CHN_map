@@ -1,6 +1,7 @@
 const atlasCountries = {
  fr:{
   name:'法国',originalName:'France',shortName:'FR',originalLocale:'fr-FR',languageName:'Français',
+  capital:{name:'巴黎',original:'Paris',coordinates:[2.3522,48.8566]},
   notes:'fr-data',originalNotes:'notes-fr.html',west:-6,north:52,lonScale:49,latScale:69,
   viewWidth:780,viewHeight:760,center:[365,380],
   levels:['大区','省','行政专区'],
@@ -8,6 +9,7 @@ const atlasCountries = {
  },
  jp:{
   name:'日本',originalName:'日本',shortName:'Japan',originalLocale:'ja-JP',languageName:'日本語',
+  capital:{name:'东京',original:'東京',coordinates:[139.744,35.676]},
   notes:'jp-data',originalNotes:'notes-ja.html', west:122,north:46,lonScale:30,latScale:38,
   viewWidth:755,viewHeight:855,center:[368,431],
   levels:['都道府县','','市区町村'],
@@ -15,32 +17,93 @@ const atlasCountries = {
  },
  us:{
   name:'美国',originalName:'United States',shortName:'US',originalLocale:'en-US',languageName:'English',notes:'us-data',originalNotes:'notes-en.html', west:-125, north:50, lonScale:14, latScale:18,
+  capital:{name:'华盛顿特区',original:'Washington, D.C.',coordinates:[-77.0365,38.8977]},
   viewWidth:895, viewHeight:500, center:[420,223],
   levels:['州级','县级','市镇级'],
   search:'搜索州、县、市镇或 FIPS 编码'
  },
  uk:{
   name:'英国',originalName:'United Kingdom',shortName:'UK',originalLocale:'en-GB',languageName:'English',notes:'uk-data',originalNotes:'notes-en.html', west:-8.8, north:61.1, lonScale:51, latScale:78,
+  capital:{name:'伦敦',original:'London',coordinates:[-0.1276,51.5072]},
   viewWidth:595, viewHeight:900, center:[270,445],
   levels:['组成国','英格兰大区','地方辖区'],
   search:'搜索组成国、大区、地方辖区'
  },
  cn:{
   name:'中国',originalName:'China',shortName:'China', west:73, north:54, lonScale:14, latScale:17,
+  capital:{name:'北京市',coordinates:[116.4074,39.9042]},
   viewWidth:890, viewHeight:635, center:[420,305],
   levels:['省级','地级','县级'],
   search:'搜索省、市、区县'
  }
 };
-const countryParam = new URLSearchParams(location.search).get('country');
+const atlasPeriods = {
+  'song-1208':{
+    name:'南宋时期',originalName:'南宋时期',year:1208,
+    mapTitle:'南宋时期各国局势图',
+    caption:'宋嘉定元年 · 金泰和八年 · 1208 年',notes:'song-1208-data',volume:'六',
+    capitalLegend:'都城及汗廷',
+    capitals:[
+      {name:'临安',coordinates:[120.177,30.228]},
+      {name:'中都',coordinates:[116.34,39.88]},
+      {name:'中兴府',coordinates:[106.249,38.473]},
+      {name:'羊苴咩城',coordinates:[100.16,25.70]},
+      {name:'虎思斡耳朵',coordinates:[75.25,42.747]},
+      {name:'大斡耳朵',coordinates:[109.06,47.181]}
+    ],
+    west:62,north:57,lonScale:14,latScale:17,
+    viewWidth:1460,viewHeight:845,center:[512,325],
+    terrainGrid:{west:45,north:60,rate:30,cols:3150,rows:1500},
+    routeTier:true,geometryVersion:'song-refined-v4',
+    levels:['政权与诸部','路级','府州及治所','县级治所'],
+    search:'搜索政权、路、府、州、县或治所',
+    extentNote:'大蒙古国与吐蕃等部依 1208 年全图描绘概略范围。',
+    terrainNote:'海拔采用现代测量。水系参照第六册图幅，部分河湖采用后世历史及现代地理资料。'
+  },
+  'yuan-1330':{
+    name:'元朝',originalName:'元朝',year:1330,caption:'至顺元年 · 1330 年',notes:'yuan-1330-data',volume:'七',
+    capital:{name:'大都',coordinates:[116.399,39.917]},
+    west:62,north:57,lonScale:14,latScale:17,
+    viewWidth:1160,viewHeight:1050,center:[665,190],
+    terrainGrid:{west:65,north:75,rate:30,cols:2550,rows:1950},
+    outlineFades:[[100,68,73,0],[122,58,63,.29]],
+    extentNote:'北部渐隐处为图册所示概略范围。',
+    levels:['行省及辖区','路府州等','县及同级'],
+    search:'搜索行省、路、府、州或县',
+    terrainNote:'海拔采用现代测量。水系参照元代图册和历史资料，北部部分水系采用现代地形资料。'
+  },
+  'ming-1582':{
+    name:'明朝',originalName:'明朝',year:1582,caption:'万历十年 · 1582 年',notes:'ming-1582-data',volume:'七',geometryVersion:'seams-2',
+    capital:{name:'京师',coordinates:[116.397,39.918]},
+    west:62,north:57,lonScale:14,latScale:17,
+    viewWidth:1150,viewHeight:772,center:[716,331],
+    levels:['两京与辖区','府州卫等','县及同级'],
+    search:'搜索两京、布政司、府州、卫所或县',
+    terrainNote:'海拔采用现代测量，河湖按明代图册校对，部分水系采用后世历史资料作参考。',
+    frontierLegend:'东北女真诸部活动与羁縻范围（概略）'
+  },
+  'qing-1820':{
+    name:'清朝',originalName:'清朝',year:1820,caption:'嘉庆二十五年 · 1820 年',notes:'qing-1820-data',volume:'八',
+    capital:{name:'京师',coordinates:[116.397,39.918]},
+    west:62,north:57,lonScale:14,latScale:17,
+    viewWidth:1190,viewHeight:720,center:[630,342],
+    levels:['行省及辖区','府州厅等','县及同级'],
+    search:'搜索行省、将军辖区、府州厅或县',
+    terrainNote:'海拔采用现代测量，历史河湖采用 1820 年地理资料。'
+  }
+};
+const atlasParams = new URLSearchParams(location.search);
+const countryParam = atlasParams.get('country');
+const historyParam = atlasParams.get('history');
+const atlasHistory = (!countryParam || countryParam === 'cn') && Object.hasOwn(atlasPeriods,historyParam) ? atlasPeriods[historyParam] : null;
 const countryCode = Object.hasOwn(atlasCountries,countryParam) ? countryParam : 'cn';
-const atlasCountry = atlasCountries[countryCode];
+const atlasCountry = atlasHistory || atlasCountries[countryCode];
 const atlasUK = countryCode === 'uk';
 const atlasUS = countryCode === 'us';
 const atlasJP = countryCode === 'jp';
 const atlasFR = countryCode === 'fr';
-const atlasCN = countryCode === 'cn';
-const atlasData = file => 'data/'+(atlasCN ? '' : countryCode+'/')+file;
+const atlasCN = countryCode === 'cn' && !atlasHistory;
+const atlasData = file => 'data/'+(atlasHistory ? historyParam+'/' : atlasCN ? '' : countryCode+'/')+file;
 const project = (lon,lat) => [((atlasUS && lon > 0 ? lon-360 : lon)-atlasCountry.west)*atlasCountry.lonScale,(atlasCountry.north-lat)*atlasCountry.latScale];
 const unproject = (x,y) => [atlasCountry.west+x/atlasCountry.lonScale,atlasCountry.north-y/atlasCountry.latScale];
 const ukSources = {

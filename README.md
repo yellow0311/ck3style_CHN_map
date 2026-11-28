@@ -118,6 +118,14 @@ git push -u origin main
 
 中国高精度边界存放于 `dist/data/china-boundaries/`，由 `scripts/refine_china_boundaries.py` 匹配现有行政区代码后生成。主图放大时按需加载各省数据，全国总览直接使用港澳的详细轮廓。[边界来源与口径](dist/notes.html#china-boundaries)
 
+清朝本地预览可通过中国地图上的「清朝 1820」进入。解压[复旦大学 CHGIS 的 1820 年层数据](https://yugong.fudan.edu.cn/CHGIS/sjxz.htm)中的省和府级界线、县级治所、河流线和河湖面，再运行 `python scripts/prepare_qing_1820.py <解压目录>`。生成的历史数据保存在 `dist/data/qing-1820/`，供本地预览使用。
+
+明朝本地预览可通过「明朝 1582」进入。将 CHGIS 府级边界和县级治所的 UTF-8 地理数据 ZIP 分别保存为 `dataverse-2966510.zip` 和 `county-points.zip`，同目录放入 Historical Map Project 的检出目录，以及第七册 PDF 第 63 和 73 页的 PNG（`sheet-063.png` 为竖排扫描页，`region-073.png` 为正向辽东都司分图）。运行 `python scripts/prepare_ming_1582.py <资料目录> <清朝水系解压目录>` 生成 `dist/data/ming-1582/`。[CHGIS 府界](https://doi.org/10.7910/DVN/I0Q7SM) · [CHGIS 县治](https://doi.org/10.7910/DVN/Q9VOF5) · [Historical Map Project](https://github.com/cytia/historical-map-project)
+
+元朝数据与明朝共用 CHGIS 府级边界和县级治所的压缩包。资料目录另需第七册 PDF 第 26 页的竖排 PNG（`yuan-026.png`），以及 CHGIS UTF-8 府级治所压缩包（`dataverse-2970286.zip`）。运行 `python scripts/prepare_yuan_1330.py <资料目录> <清朝水系解压目录>` 生成 `dist/data/yuan-1330/`。[CHGIS 府级治所](https://doi.org/10.7910/DVN/WW1PD6)
+
+南宋时期数据共用元朝的三个 CHGIS 压缩包。运行 `python scripts/prepare_song_1208.py <第六册 PDF 第 61 页竖排 PNG> <CHGIS 压缩包目录> <清朝水系解压目录>` 生成 `dist/data/song-1208/`。当前细化版另传 `--ccts-tiles <参考图目录> --jin-reference <金代府州 GeoJSON>`。前者使用 [CCTS 的 ad1208](https://gis.sinica.edu.tw/showwmts/index.php?l=ad1208&s=ccts) 墨卡托第 6 层（列 42–57、行 18–28）、南宋分区第 7 层（列 99–108、行 50–57）和广南接边第 9 层（列 411–418、行 216–225），文件名为 `ccts-层-列-行.png`。后者使用 [Hartwell 1200 年金代府州面](https://doi.org/10.7910/DVN/29302) 转换至 WGS84。现代海岸由项目内中国精细边界提取。
+
 美国数据存放于 `dist/data/us/`，由 `scripts/prepare_us_admin.py`、`scripts/prepare_us_localities.py`、`scripts/prepare_us_themes.py` 和 `scripts/prepare_us_terrain.py` 生成。先生成州和县级数据，并用 `python3 scripts/localize_us_names.py` 应用双语名称，再运行 `python3 scripts/prepare_us_localities.py <人口普查数据目录> <GeoNames-US.zip>` 生成市镇索引与分州地图。市镇脚本需要 `pyshp`、`shapely`、`opencc-python-reimplemented` 和 `espeakng-loader`，输入文件名见脚本说明。数据年份与覆盖说明见[美国图志手记](dist/notes.html#us-data)。
 
 法国资料见[法国图志手记](dist/notes.html#fr-data)。制图数据由 `scripts/prepare_fr.py` 和 `scripts/prepare_fr_terrain.py` 生成，静态数据存放于 `dist/data/fr/`。
