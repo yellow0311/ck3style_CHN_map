@@ -38,6 +38,29 @@ const atlasCountries = {
  }
 };
 const atlasPeriods = {
+  'song-1111':{
+    name:'北宋时期',originalName:'北宋时期',year:1111,
+    mapTitle:'北宋时期各国局势图',
+    caption:'宋政和元年 · 辽天庆元年 · 1111 年',notes:'song-1111-data',volume:'六',
+    capitalLegend:'都城及汗廷',
+    capitals:[
+      {name:'东京',coordinates:[114.348,34.797]},
+      {name:'上京',coordinates:[119.369,43.959]},
+      {name:'兴庆府',coordinates:[106.249,38.473]},
+      {name:'羊苴咩城',coordinates:[100.16,25.70]},
+      {name:'高昌',coordinates:[89.533,42.852]},
+      {name:'八剌沙衮',coordinates:[75.25,42.747]},
+      {name:'谦州',coordinates:[94.45,51.72]}
+    ],
+    west:62,north:57,lonScale:14,latScale:17,
+    viewWidth:1460,viewHeight:885,center:[512,305],
+    terrainGrid:{west:45,north:62,rate:30,cols:3150,rows:1560},
+    routeTier:true,geometryVersion:'song1111-v1',
+    levels:['政权与诸部','路道级','府州及治所','县级治所'],
+    search:'搜索政权、路、道、府、州、县或治所',
+    extentNote:'吐蕃诸部、黄头回纥与黠戛斯依 1111 年全图描绘概略范围。',
+    terrainNote:'海拔采用现代测量。水系参照第六册图幅，部分河湖采用后世历史及现代地理资料。'
+  },
   'song-1208':{
     name:'南宋时期',originalName:'南宋时期',year:1208,
     mapTitle:'南宋时期各国局势图',

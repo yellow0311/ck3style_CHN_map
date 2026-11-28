@@ -18,6 +18,10 @@
 <p>中国主图的省、地两级边界按行政管理口径绘制。加格达奇、松岭两区地权属内蒙古，主图将两区随黑龙江省大兴安岭地区着色，进入大兴安岭地区后可点选两区。<a href="https://www.dxal.gov.cn/dxal/c100055/202510/c13_321398.shtml">大兴安岭地区行政公署规划说明</a></p>
 <h3>统计口径在缩放中保持可辨</h3>
 <p>GDP 与人口在全国总览按省级数值着色，切到全国地级视图使用统一的地级色阶。进入某个省份后，图例按省内已有数据分为最多五档，颜色越深表示数值越高。灰色表示缺少该项数据。点选地级行政区可查看当地的 GDP、常住人口和数据来源。</p>
+<h2 id="song-1111-data">北宋时期 · 宋政和元年、辽天庆元年（1111 年）</h2>
+<p>涵盖谭其骧主编《中国历史地图集》第六册第 3–4 页《辽、北宋时期全图（一）》中的全部九方彩色政权与部族：北宋、辽、西夏、大理、吐蕃诸部、黄头回纥、西州回鹘、黑汗与黠戛斯。疆域与路道界参照中研院 CCTS 的 1111 年配准图层提取，沿海结合精细底图岸线，并对栅格界线进行保拓扑曲线平滑。</p>
+<p>北宋按政和元年二十四路展示，辽按天庆元年五道（上京、东京、中京、南京、西京道）展示，均支持政权、路/道、府州与县级治所四级下钻。北宋府州与县治采用 CHGIS V6 的 1111 年有效记录，辽长城以北府州与县治对照《辽史·地理志》及第六册第 5–13 页五道分图补录。</p>
+<p>西夏、大理、吐蕃诸部、黄头回纥、西州回鹘、黑汗与黠戛斯标出主要都城、府州、城邑与汗廷/部族中心。<a href="https://gis.sinica.edu.tw/showwmts/index.php?l=ad1111&amp;s=ccts">中研院 1111 年图层</a> · <a href="https://doi.org/10.7910/DVN/I0Q7SM">CHGIS 府级界线</a> · <a href="https://doi.org/10.7910/DVN/WW1PD6">CHGIS 府级治所</a> · <a href="https://doi.org/10.7910/DVN/Q9VOF5">CHGIS 县级治所</a></p>
 <h2 id="song-1208-data">南宋时期 · 宋嘉定元年、金泰和八年（1208 年）</h2>
 <p>政权、路、府州在同一套边线上绘制。府州沿其所属路裁合，路沿政权疆界裁合。南宋广南东西路等可区分的路段采用更高分辨率的配准图，金代可确定的路段保留府州矢量线形。</p>
 <p>政权接界与南宋路界以《中国历史地图集》第六册为底本，参照中研院 CCTS 的 1208 年配准边线重新提取。渤海、辽东、山东及东南沿海利用图集现代底图中较细的岸线补充海湾、半岛和近岸岛屿。金代路界以 1208 年 CHGIS 府州界为先，缺失地段参照 Hartwell 的 1200 年府州范围与图册分图。史料只记录大致范围的边疆和缺少府州界的路段仍按概略线展示。<a href="https://gis.sinica.edu.tw/showwmts/index.php?l=ad1208&amp;s=ccts">中研院 1208 年图层</a> · <a href="https://doi.org/10.7910/DVN/29302">Hartwell 中国历史地理数据</a></p>
@@ -117,6 +121,6 @@
 const params = new URLSearchParams(location.search);
 const country = params.get("country");
 const history = params.get("history");
-if (["song-1208","yuan-1330","ming-1582","qing-1820"].includes(history)) document.getElementById("atlasBack").href = "./?history="+history;
+if (["song-1111","song-1208","yuan-1330","ming-1582","qing-1820"].includes(history)) document.getElementById("atlasBack").href = "./?history="+history;
 else if (["fr","jp","uk","us"].includes(country)) document.getElementById("atlasBack").href = "./?country="+country+"&lang=zh";
 </script></body></html>
