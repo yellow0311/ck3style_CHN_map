@@ -38,6 +38,20 @@ const atlasCountries = {
  }
 };
 const atlasPeriods = {
+  'tang-741':{
+    name:'唐朝',originalName:'唐朝',year:741,
+    caption:'开元二十九年 · 741 年',notes:'tang-741-data',volume:'五',
+    capital:{name:'长安',coordinates:[108.940,34.260]},
+    west:62,north:57,lonScale:14,latScale:17,
+    viewWidth:1380,viewHeight:860,center:[565,315],
+    terrainGrid:{west:45,north:62,rate:30,cols:3150,rows:1560},
+    geometryVersion:'tang741-v8',
+    outlineFades:[[129,48.5,56.5,.45]],
+    levels:['道及辖区','府州及治所','县及同级'],
+    search:'搜索道、都护府、府州或县',
+    extentNote:'河北道东北部渐隐处为渤海、黑水、室韦等民族羁縻概略范围。',
+    terrainNote:'海拔采用现代测量。水系参照第五册图幅，部分河湖采用后世历史及现代地理资料。'
+  },
   'song-1111':{
     name:'北宋时期',originalName:'北宋时期',year:1111,
     mapTitle:'北宋时期各国局势图',
