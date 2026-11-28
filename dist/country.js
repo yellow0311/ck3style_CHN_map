@@ -38,6 +38,18 @@ const atlasCountries = {
  }
 };
 const atlasPeriods = {
+  'sui-612':{
+    name:'隋朝',originalName:'隋朝',year:612,
+    caption:'大业八年 · 612 年',notes:'sui-612-data',volume:'五',
+    capital:{name:'大兴',coordinates:[108.940,34.260]},
+    west:62,north:57,lonScale:14,latScale:17,
+    viewWidth:1150,viewHeight:760,center:[665,365],
+    terrainGrid:{west:60,north:55,rate:30,cols:2550,rows:1350},
+    geometryVersion:'sui612-v2',
+    levels:['郡级','','县级治所'],
+    search:'搜索郡或县',
+    terrainNote:'海拔采用现代测量。水系参照第五册图幅，部分河湖采用后世历史及现代地理资料。'
+  },
   'tang-741':{
     name:'唐朝',originalName:'唐朝',year:741,
     caption:'开元二十九年 · 741 年',notes:'tang-741-data',volume:'五',

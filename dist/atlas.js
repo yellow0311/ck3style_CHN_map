@@ -965,7 +965,7 @@ function drawBoundaries(bounds,scale,weights) {
 }
 function drawWater(bounds,scale) {
   const elevation = theme === 'terrain';
-  const baseRank = elevation ? (historyParam === 'song-1208' || historyParam === 'song-1111' || historyParam === 'tang-741' ? 4.5 : 6) : 4;
+  const baseRank = elevation ? (historyParam === 'song-1208' || historyParam === 'song-1111' || historyParam === 'tang-741' || historyParam === 'sui-612' ? 4.5 : 6) : 4;
   const maxRank = Math.min(10,baseRank+Math.log2(Math.max(1,zoom))*1.4);
   ctx.fillStyle = elevation ? cssColor(elevationWater) : '#a7c0c0';
   ctx.strokeStyle = elevation ? '#6c98a5' : '#89a9ae';

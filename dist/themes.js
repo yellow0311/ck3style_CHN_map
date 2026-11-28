@@ -54,7 +54,7 @@ const terrainNameStyles = {
 };
 // [类别, 名称（外国图层为 [中文, 原文]）, 最小缩放倍数, [经度, 纬度], ...备选标注位置]。
 // 水系标注参考 Natural Earth 10m 线面数据，跨区域江河可在不同河段标注。
-const terrainNames = (historyParam === 'song-1208' || historyParam === 'song-1111' || historyParam === 'tang-741') && atlasHistory ? [
+const terrainNames = (historyParam === 'song-1208' || historyParam === 'song-1111' || historyParam === 'tang-741' || historyParam === 'sui-612') && atlasHistory ? [
   ['land','天山',1,[83.4,43.7]],['land','帕米尔高原',1.5,[73.2,38.3]],
   ['land','昆仑山',1.15,[85.0,36]],['land','喜马拉雅山',1,[87,28.5]],
   ['land','祁连山',1.3,[99.6,38.05]],['land','横断山',1.55,[99.8,28.4]],
